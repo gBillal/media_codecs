@@ -1,13 +1,25 @@
 defmodule MediaCodecs.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+  @github_url "https://github.com/gBillal/media_codecs"
+
   def project do
     [
       app: :media_codecs,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      # hex
+      description: "Media Codecs Utilities",
+      package: package(),
+
+      # docs
+      name: "MediCodecs",
+      source_url: @github_url,
+      docs: docs()
     ]
   end
 
@@ -22,6 +34,40 @@ defmodule MediaCodecs.MixProject do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["Billal Ghilas"],
+      licenses: ["Apache-2.0"],
+      links: %{
+        "GitHub" => @github_url
+      }
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: [
+        "README.md",
+        "LICENSE"
+      ],
+      formatters: ["html"],
+      source_ref: "v#{@version}",
+      nest_modules_by_prefix: [
+        MediaCodecs.H264,
+        MediaCodecs.H265
+      ],
+      groups_for_modules: [
+        H264: [
+          ~r/MediaCodecs\.H264($|\.)/
+        ],
+        H265: [
+          ~r/MediaCodecs\.H265($|\.)/
+        ]
+      ]
     ]
   end
 end

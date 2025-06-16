@@ -1,6 +1,6 @@
 defmodule MediaCodecs.H265.SPS do
   @moduledoc """
-  Module responsible for parsing `h265` sps.
+  Struct describing an H.265 Sequence Parameter Set (SPS).
   """
 
   import MediaCodecs.Helper
@@ -99,6 +99,9 @@ defmodule MediaCodecs.H265.SPS do
     sps.pic_height_in_luma_samples - sub_height_c * (bottom + top)
   end
 
+  @doc """
+  Gets the stream profile.
+  """
   @spec profile(t()) :: profile()
   def profile(%__MODULE__{profile_idc: 1}), do: :main
   def profile(%__MODULE__{profile_idc: 2}), do: :main_10

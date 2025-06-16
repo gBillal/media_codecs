@@ -5,7 +5,7 @@ defmodule MediaCodecs.H265 do
 
   alias MediaCodecs.H265.{NALU, SPS}
 
-  @type nalu_type :: :vps | :sps | :pps
+  @type nalu_type :: :vps | :sps | :pps | :unknown
 
   @doc """
   Gets NALu type.

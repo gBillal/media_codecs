@@ -5,7 +5,7 @@ defmodule MediaCodecs.H264 do
 
   alias MediaCodecs.H264.{NALU, SPS}
 
-  @type nalu_type :: :sps | :pps
+  @type nalu_type :: :sps | :pps | :unknown
   @type profile ::
           :high_cavlc_4_4_4_intra
           | :constrained_baseline

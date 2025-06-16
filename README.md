@@ -1,6 +1,9 @@
 # MediaCodecs
 
-Codec utilities.
+[![Hex.pm](https://img.shields.io/hexpm/v/media_codecs.svg)](https://hex.pm/packages/media_codecs)
+[![API Docs](https://img.shields.io/badge/api-docs-yellow.svg?style=flat)](https://hexdocs.pm/media_codecs)
+
+Media codecs utilities.
 
 ## Installation
 
