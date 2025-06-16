@@ -9,6 +9,12 @@ defmodule MediaCodecs.H264.SPS do
           seq_parameter_set_id: non_neg_integer(),
           profile_idc: non_neg_integer(),
           level_idc: non_neg_integer(),
+          constraint_set0: 0 | 1,
+          constraint_set1: 0 | 1,
+          constraint_set2: 0 | 1,
+          constraint_set3: 0 | 1,
+          constraint_set4: 0 | 1,
+          constraint_set5: 0 | 1,
           chroma_format_idc: non_neg_integer(),
           separate_colour_plane_flag: 0 | 1,
           bit_depth_luma_minus8: non_neg_integer(),
@@ -44,6 +50,12 @@ defmodule MediaCodecs.H264.SPS do
     :seq_parameter_set_id,
     :profile_idc,
     :level_idc,
+    :constraint_set0,
+    :constraint_set1,
+    :constraint_set2,
+    :constraint_set3,
+    :constraint_set4,
+    :constraint_set5,
     :log2_max_frame_num_minus4,
     :pic_order_cnt_type,
     :log2_max_pic_order_cnt_lsb_minus4,
@@ -133,13 +145,45 @@ defmodule MediaCodecs.H264.SPS do
     height_in_mbs * 16 - height_offset
   end
 
-  defp do_parse(<<profile_idc::8, _constraint_set::6, _reserverd::2, level_idc::8, rest::binary>>) do
+  @doc """
+  Gets the encoder profile.
+  """
+  @spec profile(t()) :: MediaCodecs.H264.profile()
+  def profile(%__MODULE__{profile_idc: 44}), do: :high_cavlc_4_4_4_intra
+  def profile(%__MODULE__{profile_idc: 66, constraint_set1: 1}), do: :constrained_baseline
+  def profile(%__MODULE__{profile_idc: 66}), do: :baseline
+  def profile(%__MODULE__{profile_idc: 77}), do: :main
+  def profile(%__MODULE__{profile_idc: 88}), do: :extended
+
+  def profile(%__MODULE__{profile_idc: 100, constraint_set4: 1, constraint_set5: 1}),
+    do: :constrained_high
+
+  def profile(%__MODULE__{profile_idc: 100, constraint_set4: 1}), do: :progressive_high
+  def profile(%__MODULE__{profile_idc: 100}), do: :high
+  def profile(%__MODULE__{profile_idc: 110, constraint_set3: 1}), do: :high_10_intra
+  def profile(%__MODULE__{profile_idc: 110}), do: :high_10
+  def profile(%__MODULE__{profile_idc: 122, constraint_set3: 1}), do: :high_4_2_2_intra
+  def profile(%__MODULE__{profile_idc: 122}), do: :high_4_2_2
+  def profile(%__MODULE__{profile_idc: 244, constraint_set3: 1}), do: :high_4_4_4_intra
+  def profile(%__MODULE__{profile_idc: 244}), do: :high_4_4_4_predictive
+
+  defp do_parse(
+         <<profile_idc::8, constraint_set0::1, constraint_set1::1, constraint_set2::1,
+           constraint_set3::1, constraint_set4::1, constraint_set5::1, _reserverd::2,
+           level_idc::8, rest::binary>>
+       ) do
     {seq_parameter_set_id, rest} = exp_golomb_uint(rest)
 
     sps = %__MODULE__{
       seq_parameter_set_id: seq_parameter_set_id,
       profile_idc: profile_idc,
-      level_idc: level_idc
+      level_idc: level_idc,
+      constraint_set0: constraint_set0,
+      constraint_set1: constraint_set1,
+      constraint_set2: constraint_set2,
+      constraint_set3: constraint_set3,
+      constraint_set4: constraint_set4,
+      constraint_set5: constraint_set5
     }
 
     {sps, rest} =

@@ -6,6 +6,21 @@ defmodule MediaCodecs.H264 do
   alias MediaCodecs.H264.{NALU, SPS}
 
   @type nalu_type :: :sps | :pps
+  @type profile ::
+          :high_cavlc_4_4_4_intra
+          | :constrained_baseline
+          | :baseline
+          | :main
+          | :extended
+          | :constrained_high
+          | :progressive_high
+          | :high
+          | :high_10_intra
+          | :high_10
+          | :high_4_2_2_intra
+          | :high_4_2_2
+          | :high_4_4_4_intra
+          | :high_4_4_4_predictive
 
   @doc """
   Gets NALu type.

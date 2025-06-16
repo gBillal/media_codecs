@@ -29,7 +29,7 @@ defmodule MediaCodecs.H264.SPSTest do
 
       assert SPS.width(sps) == 1280
       assert SPS.height(sps) == 720
-      # assert SPS.profile(sps) == :main
+      assert SPS.profile(sps) == :high
     end
 
     test "sps with scaling list" do
@@ -174,6 +174,7 @@ defmodule MediaCodecs.H264.SPSTest do
 
       assert SPS.width(sps) == 1920
       assert SPS.height(sps) == 1080
+      assert SPS.profile(sps) == :constrained_baseline
     end
   end
 end

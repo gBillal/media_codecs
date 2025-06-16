@@ -1,5 +1,5 @@
 defmodule MediaCodecs do
   @moduledoc """
-  Utilities for working with media codecs.
+  Media codecs utilities.
   """
 end
