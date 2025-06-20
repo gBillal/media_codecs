@@ -7,8 +7,9 @@ defmodule MediaCodecs.H264.NALU do
 
   @type t :: %__MODULE__{
           type: H264.nalu_type(),
+          nal_ref_idc: non_neg_integer(),
           content: struct() | nil
         }
 
-  defstruct [:type, :content]
+  defstruct [:type, :nal_ref_idc, :content]
 end
