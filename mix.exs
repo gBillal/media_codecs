@@ -1,7 +1,7 @@
 defmodule MediaCodecs.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @github_url "https://github.com/gBillal/media_codecs"
 
   def project do
