@@ -92,6 +92,25 @@ defmodule MediaCodecs.H265 do
     {{Enum.reverse(vps), Enum.reverse(sps), Enum.reverse(pps)}, Enum.reverse(au)}
   end
 
+  @doc """
+  Convert an Annex B formatted access unit to an elementary stream.
+
+  The NALU prefix size can be specified, defaulting to 4 bytes.
+  """
+  @spec annexb_to_elementary_stream(
+          access_unit :: binary() | [binary()],
+          nalu_prefix_size :: integer()
+        ) :: binary()
+  def annexb_to_elementary_stream(access_unit, nalu_prefix_size \\ 4)
+
+  def annexb_to_elementary_stream(access_unit, nalu_prefix_size) when is_list(access_unit) do
+    Enum.map_join(access_unit, &<<byte_size(&1)::integer-size(nalu_prefix_size * 8), &1::binary>>)
+  end
+
+  def annexb_to_elementary_stream(access_unit, nalu_prefix_size) do
+    annexb_to_elementary_stream(nalus(access_unit), nalu_prefix_size)
+  end
+
   defp header_and_body(<<_::1, type::6, nuh_layer_id::6, temporal_id::3, nal_body::binary>>) do
     {{type, nuh_layer_id, temporal_id}, nal_body}
   end

@@ -32,4 +32,15 @@ defmodule MediaCodecs.H264Test do
     assert H264.nalu_type(sps) == :sps
     assert H264.nalu_type(pps) == :pps
   end
+
+  test "Convert Annex B to elemetary stream" do
+    access_unit = File.read!(@test_fixture)
+    expected_nalus = H264.nalus(access_unit)
+
+    elementary_stream = H264.annexb_to_elementary_stream(access_unit, 2)
+    assert elementary_stream == H264.annexb_to_elementary_stream(expected_nalus, 2)
+
+    nalus = for <<size::16, nalu::binary-size(size) <- elementary_stream>>, do: nalu
+    assert nalus == expected_nalus
+  end
 end
