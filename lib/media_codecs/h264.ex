@@ -11,6 +11,7 @@ defmodule MediaCodecs.H264 do
           | :part_b
           | :part_c
           | :idr
+          | :sei
           | :sps
           | :pps
           | :aud
