@@ -54,8 +54,8 @@ defmodule MediaCodecs.H265.SPS do
   @doc """
   Parses a SPS NALU from a binary string.
   """
-  @spec parse(binary()) :: t()
-  def parse(<<_header::16, nalu_body::binary>>) do
+  @spec parse(nal_body :: binary()) :: t()
+  def parse(nalu_body) do
     nalu_body
     |> emulation_prevention_remove()
     |> do_parse()
