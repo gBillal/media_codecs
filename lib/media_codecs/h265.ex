@@ -3,7 +3,7 @@ defmodule MediaCodecs.H265 do
   Utilities for working with H.265 (HEVC) video codec.
   """
 
-  alias MediaCodecs.H265.{NALU, SPS}
+  alias MediaCodecs.H265.{NALU, PPS, SPS}
 
   @type nalu_type ::
           :trail_n
@@ -59,6 +59,7 @@ defmodule MediaCodecs.H265 do
 
     case type do
       :sps -> %{nalu | content: SPS.parse(nal_body)}
+      :pps -> %{nalu | content: PPS.parse(nal_body)}
       _ -> nalu
     end
   end
