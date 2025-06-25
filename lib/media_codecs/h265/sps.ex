@@ -108,6 +108,22 @@ defmodule MediaCodecs.H265.SPS do
   def profile(%__MODULE__{profile_idc: 3}), do: :main_still_picture
   def profile(%__MODULE__{profile_idc: 4}), do: :rext
 
+  @doc """
+  Builds the MIME type from the SPS.
+
+  The tag is the first part of the MIME type (e.g. `hvc1`).
+  """
+  @spec mime_type(t(), String.t()) :: String.t()
+  def mime_type(%__MODULE__{} = sps, tag) do
+    tier =
+      case sps.tier_flag do
+        0 -> "L"
+        1 -> "H"
+      end
+
+    "#{tag}.#{sps.profile_idc}.#{reverse_bits(sps.profile_compatibility_flag, 32)}.#{tier}#{sps.level_idc}.B0"
+  end
+
   defp do_parse(
          <<vps_id::4, max_sub_layers_minus1::3, temporal_id_nesting_flag::1, profile_space::2,
            tier_flag::1, profile_idc::5, profile_compatibility_flag::32,
@@ -159,4 +175,15 @@ defmodule MediaCodecs.H265.SPS do
 
   defp seperate_colour_plane(3, <<_::1, rest::bitstring>>), do: rest
   defp seperate_colour_plane(_chroma_format_idc, rest), do: rest
+
+  defp reverse_bits(number, width) do
+    do_reverse_bits(number, width, 0)
+  end
+
+  defp do_reverse_bits(0, 0, reversed), do: reversed
+
+  defp do_reverse_bits(n, width, reversed) do
+    next_reversed = Bitwise.bsl(reversed, 1) |> Bitwise.bor(Bitwise.band(n, 1))
+    do_reverse_bits(Bitwise.bsr(n, 1), width - 1, next_reversed)
+  end
 end

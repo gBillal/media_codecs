@@ -30,6 +30,7 @@ defmodule MediaCodecs.H264.SPSTest do
       assert SPS.width(sps) == 1280
       assert SPS.height(sps) == 720
       assert SPS.profile(sps) == :high
+      assert SPS.mime_type(sps, "avc1") == "avc1.64001F"
     end
 
     test "sps with scaling list" do
@@ -155,6 +156,8 @@ defmodule MediaCodecs.H264.SPSTest do
                  ]
                ]
              } = sps
+
+      assert SPS.mime_type(sps, "avc1") == "avc1.640032"
     end
 
     test "sps with frame cropping" do
@@ -175,6 +178,7 @@ defmodule MediaCodecs.H264.SPSTest do
       assert SPS.width(sps) == 1920
       assert SPS.height(sps) == 1080
       assert SPS.profile(sps) == :constrained_baseline
+      assert SPS.mime_type(sps, "avc1") == "avc1.42C028"
     end
   end
 end

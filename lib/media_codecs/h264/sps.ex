@@ -167,6 +167,20 @@ defmodule MediaCodecs.H264.SPS do
   def profile(%__MODULE__{profile_idc: 244, constraint_set3: 1}), do: :high_4_4_4_intra
   def profile(%__MODULE__{profile_idc: 244}), do: :high_4_4_4_predictive
 
+  @doc """
+  Builds the MIME type from the SPS.
+
+  The tag is the first part of the MIME type (e.g. `avc1`).
+  """
+  @spec mime_type(t(), String.t()) :: String.t()
+  def mime_type(%__MODULE__{} = sps, tag) do
+    compatibility =
+      <<sps.constraint_set0::1, sps.constraint_set1::1, sps.constraint_set2::1,
+        sps.constraint_set3::1, sps.constraint_set4::1, sps.constraint_set5::1, 0::2>>
+
+    "#{tag}." <> Base.encode16(<<sps.profile_idc, compatibility::binary, sps.level_idc>>)
+  end
+
   defp do_parse(
          <<profile_idc::8, constraint_set0::1, constraint_set1::1, constraint_set2::1,
            constraint_set3::1, constraint_set4::1, constraint_set5::1, _reserverd::2,

@@ -37,6 +37,7 @@ defmodule MediaCodecs.H265.SPSTest do
       assert SPS.width(sps) == 1920
       assert SPS.height(sps) == 1080
       assert SPS.profile(sps) == :main
+      assert SPS.mime_type(sps, "hvc1") == "hvc1.1.6.L120.B0"
     end
   end
 end
