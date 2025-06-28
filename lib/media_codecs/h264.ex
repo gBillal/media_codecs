@@ -3,7 +3,7 @@ defmodule MediaCodecs.H264 do
   Utilities for working with H.264 (AVC) video codec.
   """
 
-  alias MediaCodecs.H264.{NALU, SPS}
+  alias MediaCodecs.H264.{NALU, PPS, SPS}
 
   @type nalu_type ::
           :non_idr
@@ -60,6 +60,7 @@ defmodule MediaCodecs.H264 do
 
     case type(type) do
       :sps -> %NALU{type: :sps, nal_ref_idc: nal_ref_idc, content: SPS.parse(nal_body)}
+      :pps -> %NALU{type: :pps, nal_ref_idc: nal_ref_idc, content: PPS.parse(nal_body)}
       type -> %NALU{type: type, nal_ref_idc: nal_ref_idc, content: nil}
     end
   end
