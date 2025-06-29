@@ -13,7 +13,7 @@ defmodule MediaCodecs.H265.SPSTest do
       sps = SPS.parse(sps_data)
 
       assert %SPS{
-               vps_id: 0,
+               video_parameter_set_id: 0,
                max_sub_layers_minus1: 0,
                temporal_id_nesting_flag: 1,
                profile_space: 0,
@@ -25,7 +25,7 @@ defmodule MediaCodecs.H265.SPSTest do
                non_packed_constraint_flag: 0,
                frame_only_constraint_flag: 1,
                level_idc: 120,
-               sps_id: 0,
+               seq_parameter_set_id: 0,
                chroma_format_idc: 1,
                pic_width_in_luma_samples: 1920,
                pic_height_in_luma_samples: 1080,

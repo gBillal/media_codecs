@@ -6,7 +6,7 @@ defmodule MediaCodecs.H265.SPS do
   import MediaCodecs.Helper
 
   @type t :: %__MODULE__{
-          vps_id: non_neg_integer(),
+          video_parameter_set_id: non_neg_integer(),
           max_sub_layers_minus1: non_neg_integer(),
           temporal_id_nesting_flag: 0 | 1,
           profile_space: non_neg_integer(),
@@ -18,19 +18,27 @@ defmodule MediaCodecs.H265.SPS do
           non_packed_constraint_flag: 0 | 1,
           frame_only_constraint_flag: 0 | 1,
           level_idc: non_neg_integer(),
-          sps_id: non_neg_integer(),
+          seq_parameter_set_id: non_neg_integer(),
           chroma_format_idc: non_neg_integer(),
+          separate_colour_plane_flag: 0 | 1,
           pic_width_in_luma_samples: non_neg_integer(),
           pic_height_in_luma_samples: non_neg_integer(),
           conformance_window: [non_neg_integer()] | nil,
           bit_depth_luma_minus8: non_neg_integer(),
-          bit_depth_chroma_minus8: non_neg_integer()
+          bit_depth_chroma_minus8: non_neg_integer(),
+          log2_max_pic_order_cnt_lsb_minus4: non_neg_integer(),
+          sub_layer_ordering_info_present_flag: 0 | 1,
+          max_dec_pic_buffering_minus1: [non_neg_integer()],
+          max_num_reorder_pics: [non_neg_integer()],
+          max_latency_increase_plus1: [non_neg_integer()],
+          log2_min_luma_coding_block_size_minus3: non_neg_integer(),
+          log2_diff_max_min_luma_coding_block_size: non_neg_integer()
         }
 
   @type profile :: :main | :main_10 | :main_still_picture | :rext
 
   defstruct [
-    :vps_id,
+    :video_parameter_set_id,
     :max_sub_layers_minus1,
     :temporal_id_nesting_flag,
     :profile_space,
@@ -42,13 +50,21 @@ defmodule MediaCodecs.H265.SPS do
     :non_packed_constraint_flag,
     :frame_only_constraint_flag,
     :level_idc,
-    :sps_id,
+    :seq_parameter_set_id,
     :chroma_format_idc,
+    :separate_colour_plane_flag,
     :pic_width_in_luma_samples,
     :pic_height_in_luma_samples,
     :conformance_window,
     :bit_depth_luma_minus8,
-    :bit_depth_chroma_minus8
+    :bit_depth_chroma_minus8,
+    :log2_max_pic_order_cnt_lsb_minus4,
+    :sub_layer_ordering_info_present_flag,
+    :max_dec_pic_buffering_minus1,
+    :max_num_reorder_pics,
+    :max_latency_increase_plus1,
+    :log2_min_luma_coding_block_size_minus3,
+    :log2_diff_max_min_luma_coding_block_size
   ]
 
   @doc """
@@ -124,23 +140,59 @@ defmodule MediaCodecs.H265.SPS do
     "#{tag}.#{sps.profile_idc}.#{reverse_bits(sps.profile_compatibility_flag, 32)}.#{tier}#{sps.level_idc}.B0"
   end
 
+  @doc false
+  def segment_size(%__MODULE__{} = sps) do
+    pic_width = sps.pic_width_in_luma_samples
+    pic_height = sps.pic_height_in_luma_samples
+
+    min_luma_block_size = sps.log2_min_luma_coding_block_size_minus3 + 3
+    ctb_log2_size_y = min_luma_block_size + sps.log2_diff_max_min_luma_coding_block_size
+    ctb_size_y = Bitwise.bsl(1, ctb_log2_size_y)
+
+    pic_width_in_ctbs_y = ceil(pic_width / ctb_size_y)
+    pic_height_in_ctbs_y = ceil(pic_height / ctb_size_y)
+
+    (pic_width_in_ctbs_y * pic_height_in_ctbs_y)
+    |> :math.log2()
+    |> ceil()
+  end
+
   defp do_parse(
-         <<vps_id::4, max_sub_layers_minus1::3, temporal_id_nesting_flag::1, profile_space::2,
-           tier_flag::1, profile_idc::5, profile_compatibility_flag::32,
+         <<video_parameter_set_id::4, max_sub_layers_minus1::3, temporal_id_nesting_flag::1,
+           profile_space::2, tier_flag::1, profile_idc::5, profile_compatibility_flag::32,
            progressive_source_flag::1, interlaced_source_flag::1, non_packed_constraint_flag::1,
            frame_only_constraint_flag::1, _reserved_44bits::44, level_idc::8, rest::binary>>
        ) do
-    {sps_id, rest} = exp_golomb_uint(rest)
+    {seq_parameter_set_id, rest} = exp_golomb_uint(rest)
     {chroma_format_idc, rest} = exp_golomb_uint(rest)
-    rest = seperate_colour_plane(chroma_format_idc, rest)
+    {separate_colour_plane_flag, rest} = separate_colour_plane_flag(chroma_format_idc, rest)
     {pic_width_in_luma_samples, rest} = exp_golomb_uint(rest)
     {pic_height_in_luma_samples, rest} = exp_golomb_uint(rest)
     {conformance_window, rest} = conformance_window(rest)
     {bit_depth_luma_minus8, rest} = exp_golomb_uint(rest)
-    {bit_depth_chroma_minus8, _rest} = exp_golomb_uint(rest)
+    {bit_depth_chroma_minus8, rest} = exp_golomb_uint(rest)
+    {log2_max_pic_order_cnt_lsb_minus4, rest} = exp_golomb_uint(rest)
+    <<sub_layer_ordering_info_present_flag::1, rest::bitstring>> = rest
+
+    idx = if sub_layer_ordering_info_present_flag == 1, do: 0, else: max_sub_layers_minus1
+
+    {{max_dec_pic_buffering_minus1, max_num_reorder_pics, max_latency_increase_plus1}, rest} =
+      Enum.reduce(idx..max_sub_layers_minus1, {{[], [], []}, rest}, fn _idx,
+                                                                       {{list1, list2, list3},
+                                                                        rest} ->
+        {max_dec_pic_buffering_minus1, rest} = exp_golomb_uint(rest)
+        {max_num_reorder_pics, rest} = exp_golomb_uint(rest)
+        {max_latency_increase_plus1, rest} = exp_golomb_uint(rest)
+
+        {{[max_dec_pic_buffering_minus1 | list1], [max_num_reorder_pics | list2],
+          [max_latency_increase_plus1 | list3]}, rest}
+      end)
+
+    {log2_min_luma_coding_block_size_minus3, rest} = exp_golomb_uint(rest)
+    {log2_diff_max_min_luma_coding_block_size, _rest} = exp_golomb_uint(rest)
 
     %__MODULE__{
-      vps_id: vps_id,
+      video_parameter_set_id: video_parameter_set_id,
       max_sub_layers_minus1: max_sub_layers_minus1,
       temporal_id_nesting_flag: temporal_id_nesting_flag,
       profile_space: profile_space,
@@ -152,13 +204,21 @@ defmodule MediaCodecs.H265.SPS do
       non_packed_constraint_flag: non_packed_constraint_flag,
       frame_only_constraint_flag: frame_only_constraint_flag,
       level_idc: level_idc,
-      sps_id: sps_id,
+      seq_parameter_set_id: seq_parameter_set_id,
       chroma_format_idc: chroma_format_idc,
+      separate_colour_plane_flag: separate_colour_plane_flag,
       pic_width_in_luma_samples: pic_width_in_luma_samples,
       pic_height_in_luma_samples: pic_height_in_luma_samples,
       conformance_window: conformance_window,
       bit_depth_luma_minus8: bit_depth_luma_minus8,
-      bit_depth_chroma_minus8: bit_depth_chroma_minus8
+      bit_depth_chroma_minus8: bit_depth_chroma_minus8,
+      log2_max_pic_order_cnt_lsb_minus4: log2_max_pic_order_cnt_lsb_minus4,
+      sub_layer_ordering_info_present_flag: sub_layer_ordering_info_present_flag,
+      max_dec_pic_buffering_minus1: Enum.reverse(max_dec_pic_buffering_minus1),
+      max_num_reorder_pics: Enum.reverse(max_num_reorder_pics),
+      max_latency_increase_plus1: Enum.reverse(max_latency_increase_plus1),
+      log2_min_luma_coding_block_size_minus3: log2_min_luma_coding_block_size_minus3,
+      log2_diff_max_min_luma_coding_block_size: log2_diff_max_min_luma_coding_block_size
     }
   end
 
@@ -173,8 +233,10 @@ defmodule MediaCodecs.H265.SPS do
 
   defp conformance_window(rest), do: {nil, rest}
 
-  defp seperate_colour_plane(3, <<_::1, rest::bitstring>>), do: rest
-  defp seperate_colour_plane(_chroma_format_idc, rest), do: rest
+  defp separate_colour_plane_flag(3, <<separate_colour_plane_flag::1, rest::bitstring>>),
+    do: {separate_colour_plane_flag, rest}
+
+  defp separate_colour_plane_flag(_chroma_format_idc, rest), do: {0, rest}
 
   defp reverse_bits(number, width) do
     do_reverse_bits(number, width, 0)

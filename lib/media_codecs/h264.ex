@@ -73,7 +73,7 @@ defmodule MediaCodecs.H264 do
         %NALU{
           type: type,
           nal_ref_idc: nal_ref_idc,
-          content: Slice.parse(type, nal_body, opts[:sps], opts[:pps])
+          content: Slice.parse(nalu, opts[:sps], opts[:pps])
         }
 
       type ->

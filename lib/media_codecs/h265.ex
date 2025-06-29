@@ -3,7 +3,7 @@ defmodule MediaCodecs.H265 do
   Utilities for working with H.265 (HEVC) video codec.
   """
 
-  alias MediaCodecs.H265.{NALU, PPS, SPS}
+  alias MediaCodecs.H265.{NALU, PPS, Slice, SPS}
 
   @type nalu_type ::
           :trail_n
@@ -45,22 +45,34 @@ defmodule MediaCodecs.H265 do
 
   @doc """
   Parses a NALU bitstring and returns a NALU struct.
-  """
-  @spec parse_nalu(nalu()) :: NALU.t()
-  def parse_nalu(nalu) do
-    {{type, nuh_layer_id, nuh_temporal_id_plus1}, nal_body} = header_and_body(nalu)
-    type = type(type)
 
-    nalu = %NALU{
+  An optional keyword can be provided to completely parse the NAL unit:
+  - `:sps` - provide the parsed sps NAL unit. Needed for slice parsing.
+  - `:pps` - provide the parsed pps NAL unit. Needed for slice parsing.
+  """
+  @spec parse_nalu(nalu(), keyword()) :: NALU.t()
+  def parse_nalu(nalu, opts \\ []) do
+    {{int_type, nuh_layer_id, nuh_temporal_id_plus1}, nal_body} = header_and_body(nalu)
+    type = type(int_type)
+
+    parsed_nalu = %NALU{
       type: type,
       nuh_layer_id: nuh_layer_id,
       nuh_temporal_id_plus1: nuh_temporal_id_plus1
     }
 
     case type do
-      :sps -> %{nalu | content: SPS.parse(nal_body)}
-      :pps -> %{nalu | content: PPS.parse(nal_body)}
-      _ -> nalu
+      :sps ->
+        %{parsed_nalu | content: SPS.parse(nal_body)}
+
+      :pps ->
+        %{parsed_nalu | content: PPS.parse(nal_body)}
+
+      _type when int_type < 32 ->
+        %{parsed_nalu | content: Slice.parse(nalu, opts[:sps], opts[:pps])}
+
+      _ ->
+        parsed_nalu
     end
   end
 

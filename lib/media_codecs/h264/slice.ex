@@ -5,8 +5,7 @@ defmodule MediaCodecs.H264.Slice do
 
   import MediaCodecs.Helper
 
-  alias MediaCodecs.H264
-  alias MediaCodecs.H264.NALU
+  alias MediaCodecs.H264.{PPS, SPS}
 
   @type t :: %__MODULE__{
           first_mb_in_slice: non_neg_integer(),
@@ -17,7 +16,7 @@ defmodule MediaCodecs.H264.Slice do
           field_pic_flag: 0 | 1,
           bottom_field_flag: 0 | 1,
           idr_pic_id: non_neg_integer(),
-          pic_order_cnt_lsb: integer(),
+          pic_order_cnt_lsb: non_neg_integer(),
           delta_pic_order_cnt_bottom: integer()
         }
 
@@ -37,11 +36,11 @@ defmodule MediaCodecs.H264.Slice do
   @doc """
   Parses a PPS NALU from a binary string.
   """
-  @spec parse(H264.nalu_type(), nal_body :: binary(), NALU.t() | nil, NALU.t() | nil) :: t()
-  def parse(nal_type, nalu_body, sps \\ nil, pps \\ nil) do
+  @spec parse(nalu :: binary(), SPS.t() | nil, PPS.t() | nil) :: t()
+  def parse(<<_::3, type::5, nalu_body::binary>>, sps \\ nil, pps \\ nil) do
     nalu_body
     |> emulation_prevention_remove()
-    |> do_parse(nal_type, sps, pps)
+    |> do_parse(type, sps, pps)
   end
 
   defp do_parse(data, type, sps, pps) do
@@ -58,23 +57,23 @@ defmodule MediaCodecs.H264.Slice do
     if is_nil(sps) or is_nil(pps) do
       slice
     else
-      {colour_plane_id, data} = colour_plane_id(data, sps.content.separate_colour_plane_flag)
+      {colour_plane_id, data} = colour_plane_id(data, sps.separate_colour_plane_flag)
 
-      <<frame_num::integer-size(sps.content.log2_max_frame_num_minus4 + 4), data::bitstring>> =
+      <<frame_num::integer-size(sps.log2_max_frame_num_minus4 + 4), data::bitstring>> =
         data
 
-      {field_pic_flag, data} = field_pic_flag(data, sps.content.frame_mbs_only_flag)
+      {field_pic_flag, data} = field_pic_flag(data, sps.frame_mbs_only_flag)
       {bottom_field_flag, data} = bottom_field_flag(data, field_pic_flag)
 
       {idr_pic_id, data} =
-        if type == :idr do
+        if type == 5 do
           exp_golomb_uint(data)
         else
           {nil, data}
         end
 
       {pic_order_cnt_lsb, delta_pic_order_cnt_bottom, _data} =
-        pic_order_cnt_lsb(data, field_pic_flag, sps.content, pps.content)
+        pic_order_cnt_lsb(data, field_pic_flag, sps, pps)
 
       %__MODULE__{
         slice
