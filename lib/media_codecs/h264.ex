@@ -3,7 +3,7 @@ defmodule MediaCodecs.H264 do
   Utilities for working with H.264 (AVC) video codec.
   """
 
-  alias MediaCodecs.H264.{NALU, PPS, SPS}
+  alias MediaCodecs.H264.{NALU, PPS, Slice, SPS}
 
   @type nalu_type ::
           :non_idr
@@ -53,15 +53,31 @@ defmodule MediaCodecs.H264 do
 
   @doc """
   Parses a NALU bitstring and returns a NALU struct.
+
+  An optional keyword can be provided to completely parse the NAL unit:
+  - `:sps` - provide the parsed sps NAL unit. Needed for slice parsing.
+  - `:pps` - provide the parsed pps NAL unit. Needed for slice parsing.
   """
-  @spec parse_nalu(bitstring()) :: NALU.t()
-  def parse_nalu(nalu) do
+  @spec parse_nalu(bitstring(), Keyword.t()) :: NALU.t()
+  def parse_nalu(nalu, opts \\ []) do
     {{nal_ref_idc, type}, nal_body} = header_and_body(nalu)
 
     case type(type) do
-      :sps -> %NALU{type: :sps, nal_ref_idc: nal_ref_idc, content: SPS.parse(nal_body)}
-      :pps -> %NALU{type: :pps, nal_ref_idc: nal_ref_idc, content: PPS.parse(nal_body)}
-      type -> %NALU{type: type, nal_ref_idc: nal_ref_idc, content: nil}
+      :sps ->
+        %NALU{type: :sps, nal_ref_idc: nal_ref_idc, content: SPS.parse(nal_body)}
+
+      :pps ->
+        %NALU{type: :pps, nal_ref_idc: nal_ref_idc, content: PPS.parse(nal_body)}
+
+      type when type in [:non_idr, :part_a, :part_b, :part_c, :idr] ->
+        %NALU{
+          type: type,
+          nal_ref_idc: nal_ref_idc,
+          content: Slice.parse(type, nal_body, opts[:sps], opts[:pps])
+        }
+
+      type ->
+        %NALU{type: type, nal_ref_idc: nal_ref_idc, content: nil}
     end
   end
 
