@@ -83,8 +83,8 @@ defmodule MediaCodecs.H264.SPS do
   @doc """
   Parses a Sequence Parameter Set (SPS) NALU.
   """
-  @spec parse(nal_body :: binary()) :: t()
-  def parse(nal_body) do
+  @spec parse(nalu :: binary()) :: t()
+  def parse(<<_header::8, nal_body::binary>> = _nalu) do
     nal_body
     |> emulation_prevention_remove()
     |> do_parse()

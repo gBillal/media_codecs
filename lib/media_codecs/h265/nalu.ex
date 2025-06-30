@@ -46,7 +46,7 @@ defmodule MediaCodecs.H265.NALU do
   """
   @spec parse_header(nalu :: binary()) :: t()
   def parse_header(nalu) do
-    {{type, nuh_layer_id, nuh_temporal_id_plus1}, _nal_body} = header_and_body(nalu)
+    {type, nuh_layer_id, nuh_temporal_id_plus1} = header(nalu)
 
     %__MODULE__{
       nuh_layer_id: nuh_layer_id,
@@ -60,7 +60,7 @@ defmodule MediaCodecs.H265.NALU do
   """
   @spec type(nalu :: binary()) :: nalu_type()
   def type(nalu) do
-    {{type, _, _}, _nal_body} = header_and_body(nalu)
+    {type, _, _} = header(nalu)
     nalu_type(type)
   end
 
@@ -73,7 +73,7 @@ defmodule MediaCodecs.H265.NALU do
   """
   @spec parse(nalu :: binary(), keyword()) :: t()
   def parse(nalu, opts \\ []) do
-    {{int_type, nuh_layer_id, nuh_temporal_id_plus1}, nal_body} = header_and_body(nalu)
+    {int_type, nuh_layer_id, nuh_temporal_id_plus1} = header(nalu)
     type = nalu_type(int_type)
 
     parsed_nalu = %__MODULE__{
@@ -84,10 +84,10 @@ defmodule MediaCodecs.H265.NALU do
 
     case type do
       :sps ->
-        %{parsed_nalu | content: SPS.parse(nal_body)}
+        %{parsed_nalu | content: SPS.parse(nalu)}
 
       :pps ->
-        %{parsed_nalu | content: PPS.parse(nal_body)}
+        %{parsed_nalu | content: PPS.parse(nalu)}
 
       _type when int_type < 32 ->
         %{parsed_nalu | content: Slice.parse(nalu, opts[:sps], opts[:pps])}
@@ -97,8 +97,8 @@ defmodule MediaCodecs.H265.NALU do
     end
   end
 
-  defp header_and_body(<<_::1, type::6, nuh_layer_id::6, temporal_id::3, nal_body::binary>>) do
-    {{type, nuh_layer_id, temporal_id}, nal_body}
+  defp header(<<_::1, type::6, nuh_layer_id::6, temporal_id::3, _nal_body::binary>>) do
+    {type, nuh_layer_id, temporal_id}
   end
 
   defp nalu_type(0), do: :trail_n

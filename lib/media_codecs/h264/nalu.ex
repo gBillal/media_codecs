@@ -39,7 +39,7 @@ defmodule MediaCodecs.H264.NALU do
   """
   @spec parse_header(nalu :: binary()) :: t()
   def parse_header(nalu) do
-    {{nal_ref_idc, type}, _nal_body} = header_and_body(nalu)
+    {nal_ref_idc, type} = header(nalu)
     %__MODULE__{nal_ref_idc: nal_ref_idc, type: nalu_type(type)}
   end
 
@@ -52,14 +52,14 @@ defmodule MediaCodecs.H264.NALU do
   """
   @spec parse(nalu :: binary(), Keyword.t()) :: t()
   def parse(nalu, opts \\ []) do
-    {{nal_ref_idc, type}, nal_body} = header_and_body(nalu)
+    {nal_ref_idc, type} = header(nalu)
 
     case nalu_type(type) do
       :sps ->
-        %__MODULE__{type: :sps, nal_ref_idc: nal_ref_idc, content: SPS.parse(nal_body)}
+        %__MODULE__{type: :sps, nal_ref_idc: nal_ref_idc, content: SPS.parse(nalu)}
 
       :pps ->
-        %__MODULE__{type: :pps, nal_ref_idc: nal_ref_idc, content: PPS.parse(nal_body)}
+        %__MODULE__{type: :pps, nal_ref_idc: nal_ref_idc, content: PPS.parse(nalu)}
 
       type when type in [:non_idr, :part_a, :part_b, :part_c, :idr] ->
         %__MODULE__{
@@ -79,8 +79,8 @@ defmodule MediaCodecs.H264.NALU do
   @spec type(nalu :: binary()) :: nalu_type()
   def type(<<_::3, type::5, _rest::binary>> = _nalu), do: nalu_type(type)
 
-  defp header_and_body(<<_::1, nal_ref_idc::2, type::5, nal_body::binary>>) do
-    {{nal_ref_idc, type}, nal_body}
+  defp header(<<_::1, nal_ref_idc::2, type::5, _nal_body::binary>>) do
+    {nal_ref_idc, type}
   end
 
   defp nalu_type(1), do: :non_idr
