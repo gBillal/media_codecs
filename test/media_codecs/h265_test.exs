@@ -14,7 +14,7 @@ defmodule MediaCodecs.H265Test do
 
   test "Get nalu types" do
     assert [:vps, :sps, :pps, :prefix_sei, :idr_n_lp] ==
-             File.read!(@test_fixture) |> H265.nalus() |> Enum.map(&H265.nalu_type/1)
+             File.read!(@test_fixture) |> H265.nalus() |> Enum.map(&H265.NALU.type/1)
   end
 
   test "Pop parameter sets" do
@@ -35,9 +35,9 @@ defmodule MediaCodecs.H265Test do
     assert is_list(access_unit)
     assert length(access_unit) == 2
 
-    assert H265.nalu_type(vps) == :vps
-    assert H265.nalu_type(sps) == :sps
-    assert H265.nalu_type(pps) == :pps
+    assert H265.NALU.type(vps) == :vps
+    assert H265.NALU.type(sps) == :sps
+    assert H265.NALU.type(pps) == :pps
   end
 
   test "Convert Annex B to elementary stream" do

@@ -14,7 +14,7 @@ defmodule MediaCodecs.H264Test do
 
   test "Get nalu types" do
     assert [:sps, :pps, :sei, :idr] ==
-             File.read!(@test_fixture) |> H264.nalus() |> Enum.map(&H264.nalu_type/1)
+             File.read!(@test_fixture) |> H264.nalus() |> Enum.map(&H264.NALU.type/1)
   end
 
   test "Pop parameter sets" do
@@ -29,8 +29,8 @@ defmodule MediaCodecs.H264Test do
     assert is_list(access_unit)
     assert length(access_unit) == 2
 
-    assert H264.nalu_type(sps) == :sps
-    assert H264.nalu_type(pps) == :pps
+    assert H264.NALU.type(sps) == :sps
+    assert H264.NALU.type(pps) == :pps
   end
 
   test "Convert Annex B to elemetary stream" do
