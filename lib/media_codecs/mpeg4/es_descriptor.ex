@@ -3,7 +3,7 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
   Module describing ES_Descriptor (defined in: ISO/IEC 14496-1)
   """
 
-  import MediaCodecs.Helper, only: [base128_varint_decode: 1]
+  import MediaCodecs.Helper
 
   alias MediaCodecs.MPEG4.DecoderConfigDescriptor
 
@@ -56,7 +56,32 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
     |> parse_descriptors(rest)
   end
 
-  def parse(_data), do: :error
+  def serialize(%__MODULE__{} = descriptor) do
+    decoder_config_descriptor = serialize_decoder_config_descriptor(descriptor.dec_config_descr)
+
+    depends_on_es_id =
+      if descriptor.stream_dependence_flag == 1,
+        do: <<descriptor.depends_on_es_id::16>>,
+        else: <<>>
+
+    url =
+      if descriptor.url_flag == 1,
+        do: <<byte_size(descriptor.url)::8, descriptor.url::binary>>,
+        else: <<>>
+
+    ocr_stream_id =
+      if descriptor.ocr_stream_flag == 1, do: <<descriptor.ocr_es_id::16>>, else: <<>>
+
+    es_descriptor =
+      <<descriptor.es_id::16, bool_to_int(descriptor.stream_dependence_flag)::1,
+        bool_to_int(descriptor.url_flag)::1, bool_to_int(descriptor.ocr_stream_flag)::1,
+        descriptor.stream_priority::5, depends_on_es_id::binary, url::binary,
+        ocr_stream_id::binary>>
+
+    <<0x03>> <>
+      base128_varint_encode(byte_size(decoder_config_descriptor) + byte_size(es_descriptor)) <>
+      es_descriptor <> decoder_config_descriptor
+  end
 
   defp dependant_es_id(1, <<es_id::16, rest::binary>>), do: {es_id, rest}
   defp dependant_es_id(0, data), do: {0, data}
@@ -88,4 +113,9 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
 
     parse_descriptors(es_descriptor, rest)
   end
+
+  defp serialize_decoder_config_descriptor(nil), do: <<>>
+
+  defp serialize_decoder_config_descriptor(descriptor),
+    do: DecoderConfigDescriptor.serialize(descriptor)
 end

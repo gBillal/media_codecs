@@ -48,6 +48,19 @@ defmodule MediaCodecs.Helper do
     do_base128_varint_decode(data, 0)
   end
 
+  @doc """
+  Encodes an integer into a Base128 variable-length binary.
+  """
+  @spec base128_varint_encode(non_neg_integer()) :: binary()
+  def base128_varint_encode(0), do: <<0>>
+
+  def base128_varint_encode(integer) do
+    integer |> do_base128_varint_encode([]) |> :binary.list_to_bin()
+  end
+
+  def bool_to_int(true), do: 1
+  def bool_to_int(_other), do: 0
+
   defp do_base128_varint_decode(<<stop_bit::1, length::7, rest::binary>>, acc) do
     acc = acc <<< 7 ||| length
 
@@ -55,5 +68,14 @@ defmodule MediaCodecs.Helper do
       1 -> do_base128_varint_decode(rest, acc)
       0 -> {acc, rest}
     end
+  end
+
+  defp do_base128_varint_encode(0, acc) do
+    List.update_at(acc, -1, &(&1 &&& 0x7F))
+  end
+
+  defp do_base128_varint_encode(integer, acc) do
+    value = 0x80 ||| (integer &&& 0x7F)
+    do_base128_varint_encode(integer >>> 7, [value | acc])
   end
 end

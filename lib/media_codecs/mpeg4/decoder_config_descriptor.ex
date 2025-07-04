@@ -3,7 +3,7 @@ defmodule MediaCodecs.MPEG4.DecoderConfigDescriptor do
   Module describing DecoderConfigDescriptor (defined in: ISO/IEC 14496-1)
   """
 
-  import MediaCodecs.Helper, only: [base128_varint_decode: 1]
+  import MediaCodecs.Helper
 
   @type t :: %__MODULE__{
           object_type_indication: non_neg_integer(),
@@ -45,5 +45,27 @@ defmodule MediaCodecs.MPEG4.DecoderConfigDescriptor do
       avg_bitrate: avg_bitrate,
       decoder_specific_info: decoder_specific_info
     }
+  end
+
+  @doc """
+  Serializes the DecoderConfigDescriptor struct into a binary format.
+  """
+  @spec serialize(t()) :: binary()
+  def serialize(%__MODULE__{} = descriptor) do
+    decoder_specific_config = serialize_decoder_specific_info(descriptor.decoder_specific_info)
+
+    <<0x04>> <>
+      base128_varint_encode(13 + byte_size(decoder_specific_config)) <>
+      <<descriptor.object_type_indication, descriptor.stream_type::6,
+        bool_to_int(descriptor.up_stream)::1, 1::1, descriptor.buffer_size_db::24,
+        descriptor.max_bitrate::32,
+        descriptor.avg_bitrate::32>> <>
+      serialize_decoder_specific_info(descriptor.decoder_specific_info)
+  end
+
+  defp serialize_decoder_specific_info(nil), do: <<>>
+
+  defp serialize_decoder_specific_info(config) do
+    <<0x05>> <> base128_varint_encode(byte_size(config)) <> config
   end
 end
