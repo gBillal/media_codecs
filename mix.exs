@@ -58,7 +58,8 @@ defmodule MediaCodecs.MixProject do
       source_ref: "v#{@version}",
       nest_modules_by_prefix: [
         MediaCodecs.H264,
-        MediaCodecs.H265
+        MediaCodecs.H265,
+        MediaCodecs.MPEG4,
       ],
       groups_for_modules: [
         H264: [
@@ -66,7 +67,10 @@ defmodule MediaCodecs.MixProject do
         ],
         H265: [
           ~r/MediaCodecs\.H265($|\.)/
-        ]
+        ],
+        MPEG4: [
+          ~r/MediaCodecs\.MPEG4($|\.)/
+        ],
       ]
     ]
   end

@@ -1,6 +1,8 @@
 defmodule MediaCodecs.Helper do
   @moduledoc false
 
+  import Bitwise
+
   @spec exp_golomb_uint(bitstring(), non_neg_integer()) ::
           {non_neg_integer(), bitstring()}
   @spec exp_golomb_uint(bitstring()) :: {non_neg_integer(), bitstring()}
@@ -37,5 +39,21 @@ defmodule MediaCodecs.Helper do
   @spec emulation_prevention_remove(bitstring()) :: bitstring()
   def emulation_prevention_remove(data) do
     :binary.split(data, <<0, 0, 3>>, [:global]) |> Enum.join(<<0, 0>>)
+  end
+
+  @doc """
+  Decodes a Base128 variable-length integer from the given binary data.
+  """
+  def base128_varint_decode(data) do
+    do_base128_varint_decode(data, 0)
+  end
+
+  defp do_base128_varint_decode(<<stop_bit::1, length::7, rest::binary>>, acc) do
+    acc = acc <<< 7 ||| length
+
+    case stop_bit do
+      1 -> do_base128_varint_decode(rest, acc)
+      0 -> {acc, rest}
+    end
   end
 end
