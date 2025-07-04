@@ -1,7 +1,7 @@
 defmodule MediaCodecs.H264.SPSTest do
   use ExUnit.Case, async: true
 
-  alias MediaCodecs.H264.SPS
+  alias MediaCodecs.H264.NALU.SPS
 
   describe "SPS parsing" do
     test "parses a valid SPS NAL unit" do

@@ -1,4 +1,4 @@
-defmodule MediaCodecs.H265.SPS do
+defmodule MediaCodecs.H265.NALU.SPS do
   @moduledoc """
   Struct describing an H.265 Sequence Parameter Set (SPS).
   """

@@ -1,4 +1,4 @@
-defmodule MediaCodecs.H264.PPS do
+defmodule MediaCodecs.H264.NALU.PPS do
   @moduledoc """
   Struct describing an H.264 Picture Parameter Set (PPS).
   """

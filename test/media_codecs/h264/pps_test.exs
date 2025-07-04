@@ -1,7 +1,7 @@
 defmodule MediaCodecs.H264.PPSTest do
   use ExUnit.Case, async: true
 
-  alias MediaCodecs.H264.PPS
+  alias MediaCodecs.H264.NALU.PPS
 
   test "parses PPS NAL unit" do
     assert %PPS{

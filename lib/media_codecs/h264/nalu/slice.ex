@@ -1,11 +1,11 @@
-defmodule MediaCodecs.H264.Slice do
+defmodule MediaCodecs.H264.NALU.Slice do
   @moduledoc """
   Struct describing an H.264 Slice.
   """
 
   import MediaCodecs.Helper
 
-  alias MediaCodecs.H264.{PPS, SPS}
+  alias MediaCodecs.H264.NALU.{PPS, SPS}
 
   @type t :: %__MODULE__{
           first_mb_in_slice: non_neg_integer(),

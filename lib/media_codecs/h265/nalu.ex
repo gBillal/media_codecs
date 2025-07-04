@@ -3,7 +3,7 @@ defmodule MediaCodecs.H265.NALU do
   Struct describing an h265 nalu.
   """
 
-  alias MediaCodecs.H265.{SPS, PPS, Slice}
+  alias __MODULE__.{SPS, PPS, Slice}
 
   @type nalu_type ::
           :trail_n

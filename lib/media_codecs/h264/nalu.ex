@@ -3,7 +3,7 @@ defmodule MediaCodecs.H264.NALU do
   Struct describing an h264 nalu.
   """
 
-  alias MediaCodecs.H264.{PPS, Slice, SPS}
+  alias __MODULE__.{PPS, Slice, SPS}
 
   @type nalu_type ::
           :non_idr
