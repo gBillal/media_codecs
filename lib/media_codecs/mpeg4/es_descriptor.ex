@@ -20,18 +20,16 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
           sl_config_descr: SLConfigDescriptor | nil
         }
 
-  defstruct [
-    es_id: 0,
-    stream_dependence_flag: false,
-    url_flag: false,
-    ocr_stream_flag: false,
-    stream_priority: 4,
-    depends_on_es_id: 0,
-    url: nil,
-    ocr_es_id: 0,
-    dec_config_descr: nil,
-    sl_config_descr: nil
-  ]
+  defstruct es_id: 0,
+            stream_dependence_flag: false,
+            url_flag: false,
+            ocr_stream_flag: false,
+            stream_priority: 4,
+            depends_on_es_id: 0,
+            url: nil,
+            ocr_es_id: 0,
+            dec_config_descr: nil,
+            sl_config_descr: nil
 
   @doc """
   Parses the binary into an ESDescriptor struct.

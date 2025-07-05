@@ -1,7 +1,7 @@
 defmodule MediaCodecs.MixProject do
   use Mix.Project
 
-  @version "0.3.0"
+  @version "0.4.0"
   @github_url "https://github.com/gBillal/media_codecs"
 
   def project do
@@ -59,7 +59,7 @@ defmodule MediaCodecs.MixProject do
       nest_modules_by_prefix: [
         MediaCodecs.H264,
         MediaCodecs.H265,
-        MediaCodecs.MPEG4,
+        MediaCodecs.MPEG4
       ],
       groups_for_modules: [
         H264: [
@@ -70,7 +70,7 @@ defmodule MediaCodecs.MixProject do
         ],
         MPEG4: [
           ~r/MediaCodecs\.MPEG4($|\.)/
-        ],
+        ]
       ]
     ]
   end
