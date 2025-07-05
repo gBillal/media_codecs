@@ -2,7 +2,7 @@ defmodule MediaCodecs.MPEG4Test do
   use ExUnit.Case, async: true
 
   alias MediaCodecs.MPEG4
-  alias MediaCodecs.MPEG4.{DecoderConfigDescriptor, ESDescriptor}
+  alias MediaCodecs.MPEG4.{DecoderConfigDescriptor, ESDescriptor, SLConfigDescriptor}
 
   test "parse descriptors" do
     descriptor_data =
@@ -67,12 +67,13 @@ defmodule MediaCodecs.MPEG4Test do
         max_bitrate: 0,
         avg_bitrate: 0,
         decoder_specific_info: <<7, 128, 15, 160, 8>>
-      }
+      },
+      sl_config_descr: %SLConfigDescriptor{predefined: 2}
     }
 
     expected =
-      <<3, 25, 0, 0, 4, 4, 20, 64, 21, 0, 7, 208, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 7, 128, 15, 160,
-        8>>
+      <<3, 28, 0, 0, 4, 4, 20, 64, 21, 0, 7, 208, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 7, 128, 15, 160,
+        8, 6, 1, 2>>
 
     assert ESDescriptor.serialize(descriptor) == expected
     assert [^descriptor] = MPEG4.parse_descriptors(expected)

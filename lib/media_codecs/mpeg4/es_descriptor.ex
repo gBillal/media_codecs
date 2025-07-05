@@ -5,7 +5,7 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
 
   import MediaCodecs.Helper
 
-  alias MediaCodecs.MPEG4.DecoderConfigDescriptor
+  alias MediaCodecs.MPEG4.{DecoderConfigDescriptor, SLConfigDescriptor}
 
   @type t :: %__MODULE__{
           es_id: integer(),
@@ -16,7 +16,8 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
           depends_on_es_id: integer() | nil,
           url: String.t() | nil,
           ocr_es_id: integer() | nil,
-          dec_config_descr: DecoderConfigDescriptor.t() | nil
+          dec_config_descr: DecoderConfigDescriptor.t() | nil,
+          sl_config_descr: SLConfigDescriptor | nil
         }
 
   defstruct [
@@ -28,7 +29,8 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
     :depends_on_es_id,
     :url,
     :ocr_es_id,
-    :dec_config_descr
+    :dec_config_descr,
+    :sl_config_descr
   ]
 
   @doc """
@@ -58,6 +60,7 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
 
   def serialize(%__MODULE__{} = descriptor) do
     decoder_config_descriptor = serialize_decoder_config_descriptor(descriptor.dec_config_descr)
+    sl_config_descriptor = serialize_sl_config_descriptor(descriptor.sl_config_descr)
 
     depends_on_es_id =
       if descriptor.stream_dependence_flag == 1,
@@ -78,9 +81,13 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
         descriptor.stream_priority::5, depends_on_es_id::binary, url::binary,
         ocr_stream_id::binary>>
 
+    descriptor_size =
+      byte_size(decoder_config_descriptor) + byte_size(es_descriptor) +
+        byte_size(sl_config_descriptor)
+
     <<0x03>> <>
-      base128_varint_encode(byte_size(decoder_config_descriptor) + byte_size(es_descriptor)) <>
-      es_descriptor <> decoder_config_descriptor
+      base128_varint_encode(descriptor_size) <>
+      es_descriptor <> decoder_config_descriptor <> sl_config_descriptor
   end
 
   defp dependant_es_id(1, <<es_id::16, rest::binary>>), do: {es_id, rest}
@@ -107,6 +114,9 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
         0x04 ->
           %{es_descriptor | dec_config_descr: DecoderConfigDescriptor.parse(descriptor_data)}
 
+        0x06 ->
+          %{es_descriptor | sl_config_descr: SLConfigDescriptor.parse(descriptor_data)}
+
         _tag ->
           es_descriptor
       end
@@ -118,4 +128,7 @@ defmodule MediaCodecs.MPEG4.ESDescriptor do
 
   defp serialize_decoder_config_descriptor(descriptor),
     do: DecoderConfigDescriptor.serialize(descriptor)
+
+  defp serialize_sl_config_descriptor(nil), do: <<>>
+  defp serialize_sl_config_descriptor(descriptor), do: SLConfigDescriptor.serialize(descriptor)
 end
