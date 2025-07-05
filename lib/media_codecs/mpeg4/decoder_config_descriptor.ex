@@ -18,11 +18,11 @@ defmodule MediaCodecs.MPEG4.DecoderConfigDescriptor do
   defstruct [
     :object_type_indication,
     :stream_type,
-    :up_stream,
-    :buffer_size_db,
-    :max_bitrate,
-    :avg_bitrate,
-    :decoder_specific_info
+    :decoder_specific_info,
+    up_stream: false,
+    buffer_size_db: 0,
+    max_bitrate: 0,
+    avg_bitrate: 0
   ]
 
   @doc """
