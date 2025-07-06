@@ -79,6 +79,14 @@ defmodule MediaCodecs.H264.NALU do
   @spec type(nalu :: binary()) :: nalu_type()
   def type(<<_::3, type::5, _rest::binary>> = _nalu), do: nalu_type(type)
 
+  @doc """
+  Checks if the NALU is a keyframe (IDR).
+  """
+  @spec keyframe?(nalu :: binary() | t()) :: boolean()
+  def keyframe?(%__MODULE__{type: :idr}), do: true
+  def keyframe?(%__MODULE__{}), do: false
+  def keyframe?(nalu), do: elem(header(nalu), 1) == 5
+
   defp header(<<_::1, nal_ref_idc::2, type::5, _nal_body::binary>>) do
     {nal_ref_idc, type}
   end

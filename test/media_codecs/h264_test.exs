@@ -13,8 +13,17 @@ defmodule MediaCodecs.H264Test do
   end
 
   test "Get nalu types" do
-    assert [:sps, :pps, :sei, :idr] ==
-             File.read!(@test_fixture) |> H264.nalus() |> Enum.map(&H264.NALU.type/1)
+    nalus = File.read!(@test_fixture) |> H264.nalus()
+    assert [:sps, :pps, :sei, :idr] == Enum.map(nalus, &H264.NALU.type/1)
+  end
+
+  test "keyframe?/1" do
+    nalus = File.read!(@test_fixture) |> H264.nalus()
+
+    refute H264.NALU.keyframe?(hd(nalus))
+    assert H264.NALU.keyframe?(List.last(nalus))
+    refute H264.NALU.keyframe?(hd(nalus) |> H264.NALU.parse())
+    assert H264.NALU.keyframe?(List.last(nalus) |> H264.NALU.parse())
   end
 
   test "Pop parameter sets" do

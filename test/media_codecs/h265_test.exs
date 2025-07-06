@@ -3,6 +3,8 @@ defmodule MediaCodecs.H265Test do
 
   alias MediaCodecs.H265
 
+  doctest MediaCodecs.H265.NALU
+
   @test_fixture "test/fixtures/sample.h265"
 
   test "Split an access unit to a list of NALu" do

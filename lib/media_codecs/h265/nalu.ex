@@ -3,7 +3,7 @@ defmodule MediaCodecs.H265.NALU do
   Struct describing an h265 nalu.
   """
 
-  alias __MODULE__.{SPS, PPS, Slice}
+  alias __MODULE__.{VPS, SPS, PPS, Slice}
 
   @type nalu_type ::
           :trail_n
@@ -38,6 +38,8 @@ defmodule MediaCodecs.H265.NALU do
           nuh_temporal_id_plus1: non_neg_integer(),
           content: struct() | nil
         }
+
+  @irap [:idr_n_lp, :idr_w_radl, :cra, :bla_n_lp, :bla_w_radl]
 
   defstruct [:type, :nuh_layer_id, :nuh_temporal_id_plus1, :content]
 
@@ -83,6 +85,9 @@ defmodule MediaCodecs.H265.NALU do
     }
 
     case type do
+      :vps ->
+        %{parsed_nalu | content: VPS.parse(nalu)}
+
       :sps ->
         %{parsed_nalu | content: SPS.parse(nalu)}
 
@@ -95,6 +100,23 @@ defmodule MediaCodecs.H265.NALU do
       _ ->
         parsed_nalu
     end
+  end
+
+  @doc """
+  Checks if the NALU is a keyframe (IRAP NALU).
+
+      iex> MediaCodecs.H265.NALU.keyframe?(%MediaCodecs.H265.NALU{type: :idr_n_lp})
+      true
+
+      iex> MediaCodecs.H265.NALU.keyframe?(%MediaCodecs.H265.NALU{type: :sps})
+      false
+  """
+  @spec keyframe?(nalu :: binary() | t()) :: boolean()
+  def keyframe?(%__MODULE__{type: type}), do: type in @irap
+
+  def keyframe?(nalu) do
+    {type, _, _} = header(nalu)
+    type >= 16 and type <= 23
   end
 
   defp header(<<_::1, type::6, nuh_layer_id::6, temporal_id::3, _nal_body::binary>>) do
