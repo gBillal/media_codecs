@@ -34,6 +34,7 @@ defmodule MediaCodecs.H265.SPSTest do
                bit_depth_chroma_minus8: 4
              } = sps
 
+      assert SPS.id(sps_data) == 0
       assert SPS.width(sps) == 1920
       assert SPS.height(sps) == 1080
       assert SPS.profile(sps) == :main

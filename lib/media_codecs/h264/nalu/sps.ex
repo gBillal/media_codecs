@@ -91,6 +91,18 @@ defmodule MediaCodecs.H264.NALU.SPS do
   end
 
   @doc """
+  Gets the SPS ID.
+  """
+  @spec id(nalu :: binary()) :: non_neg_integer()
+  def id(<<_header::8, body::binary>>) do
+    <<_::24, rest::binary>> = emulation_prevention_remove(body)
+
+    rest
+    |> exp_golomb_uint()
+    |> elem(0)
+  end
+
+  @doc """
   Gets the video width
   """
   @spec width(t()) :: non_neg_integer()

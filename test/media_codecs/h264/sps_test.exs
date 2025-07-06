@@ -27,6 +27,7 @@ defmodule MediaCodecs.H264.SPSTest do
                direct_8x8_inference_flag: 1
              } = sps
 
+      assert SPS.id(sps_data) == 0
       assert SPS.width(sps) == 1280
       assert SPS.height(sps) == 720
       assert SPS.profile(sps) == :high
