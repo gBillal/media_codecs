@@ -119,6 +119,15 @@ defmodule MediaCodecs.H265.NALU do
     type >= 16 and type <= 23
   end
 
+  @doc """
+  Checks if the NALU is a Video Coding Layer (VCL) NALU.
+  """
+  @spec vcl?(nalu :: binary()) :: boolean()
+  def vcl?(nalu) do
+    {type, _, _} = header(nalu)
+    type < 32
+  end
+
   defp header(<<_::1, type::6, nuh_layer_id::6, temporal_id::3, _nal_body::binary>>) do
     {type, nuh_layer_id, temporal_id}
   end

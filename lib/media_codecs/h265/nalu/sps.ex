@@ -90,6 +90,12 @@ defmodule MediaCodecs.H265.NALU.SPS do
   end
 
   @doc """
+  Get video parameter set ID from the SPS.
+  """
+  @spec video_parameter_set_id(nalu :: binary()) :: non_neg_integer()
+  def video_parameter_set_id(<<_header::16, vps_id::4, _rest::bitstring>>), do: vps_id
+
+  @doc """
   Gets the width.
   """
   @spec width(t()) :: non_neg_integer()

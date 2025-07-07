@@ -19,10 +19,10 @@ defmodule MediaCodecs.H265 do
   @spec pop_parameter_sets(binary()) ::
           {{vps :: [binary()], sps :: [binary()], pps :: [binary()]}, access_unit :: [binary()]}
   def pop_parameter_sets(access_unit) do
+    nalus = if is_binary(access_unit), do: nalus(access_unit), else: access_unit
+
     {{vps, sps, pps}, au} =
-      access_unit
-      |> nalus()
-      |> Enum.reduce({{[], [], []}, []}, fn nalu, {{vps, sps, pps}, au} ->
+      Enum.reduce(nalus, {{[], [], []}, []}, fn nalu, {{vps, sps, pps}, au} ->
         case NALU.type(nalu) do
           :vps -> {{[nalu | vps], sps, pps}, au}
           :sps -> {{vps, [nalu | sps], pps}, au}

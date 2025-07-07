@@ -87,6 +87,15 @@ defmodule MediaCodecs.H264.NALU do
   def keyframe?(%__MODULE__{}), do: false
   def keyframe?(nalu), do: elem(header(nalu), 1) == 5
 
+  @doc """
+  Checks if the NALU is a Video Coding Layer (VCL) NALU.
+  """
+  @spec vcl?(nalu :: binary() | t()) :: boolean()
+  def vcl?(%__MODULE__{type: type}) when type in [:non_idr, :part_a, :part_b, :part_c, :idr],
+    do: true
+
+  def vcl?(%__MODULE__{}), do: false
+
   defp header(<<_::1, nal_ref_idc::2, type::5, _nal_body::binary>>) do
     {nal_ref_idc, type}
   end

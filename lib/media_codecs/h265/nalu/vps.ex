@@ -25,9 +25,9 @@ defmodule MediaCodecs.H265.NALU.VPS do
   Gets the VPS ID.
   """
   @spec id(nalu :: binary()) :: non_neg_integer()
-  def id(<<_header::16, id::4, _rest::binary>>), do: id
+  def id(<<_header::16, id::4, _rest::bitstring>>), do: id
 
-  defp do_parse(<<video_parameter_set_id::4, _rest::binary>>) do
+  defp do_parse(<<video_parameter_set_id::4, _rest::bitstring>>) do
     %__MODULE__{video_parameter_set_id: video_parameter_set_id}
   end
 end

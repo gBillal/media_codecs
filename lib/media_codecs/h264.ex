@@ -32,13 +32,13 @@ defmodule MediaCodecs.H264 do
   @doc """
   Pops parameter sets from access unit.
   """
-  @spec pop_parameter_sets(binary()) ::
+  @spec pop_parameter_sets(access_unit :: binary() | [binary()]) ::
           {{sps :: [binary()], pps :: [binary()]}, access_unit :: [binary()]}
   def pop_parameter_sets(access_unit) do
+    nalus = if is_binary(access_unit), do: nalus(access_unit), else: access_unit
+
     {{sps, pps}, au} =
-      access_unit
-      |> nalus()
-      |> Enum.reduce({{[], []}, []}, fn nalu, {{sps, pps}, au} ->
+      Enum.reduce(nalus, {{[], []}, []}, fn nalu, {{sps, pps}, au} ->
         case NALU.type(nalu) do
           :sps -> {{[nalu | sps], pps}, au}
           :pps -> {{sps, [nalu | pps]}, au}
