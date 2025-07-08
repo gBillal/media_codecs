@@ -5,19 +5,13 @@ defmodule MediaCodecs.H265.NALU.SPS do
 
   import MediaCodecs.Helper
 
+  alias __MODULE__.ProfileTierLevel
+
   @type t :: %__MODULE__{
           video_parameter_set_id: non_neg_integer(),
           max_sub_layers_minus1: non_neg_integer(),
           temporal_id_nesting_flag: 0 | 1,
-          profile_space: non_neg_integer(),
-          tier_flag: 0 | 1,
-          profile_idc: non_neg_integer(),
-          profile_compatibility_flag: non_neg_integer(),
-          progressive_source_flag: 0 | 1,
-          interlaced_source_flag: 0 | 1,
-          non_packed_constraint_flag: 0 | 1,
-          frame_only_constraint_flag: 0 | 1,
-          level_idc: non_neg_integer(),
+          profile_tier_level: ProfileTierLevel.t(),
           seq_parameter_set_id: non_neg_integer(),
           chroma_format_idc: non_neg_integer(),
           separate_colour_plane_flag: 0 | 1,
@@ -41,15 +35,7 @@ defmodule MediaCodecs.H265.NALU.SPS do
     :video_parameter_set_id,
     :max_sub_layers_minus1,
     :temporal_id_nesting_flag,
-    :profile_space,
-    :tier_flag,
-    :profile_idc,
-    :profile_compatibility_flag,
-    :progressive_source_flag,
-    :interlaced_source_flag,
-    :non_packed_constraint_flag,
-    :frame_only_constraint_flag,
-    :level_idc,
+    :profile_tier_level,
     :seq_parameter_set_id,
     :chroma_format_idc,
     :separate_colour_plane_flag,
@@ -82,9 +68,17 @@ defmodule MediaCodecs.H265.NALU.SPS do
   """
   @spec id(nalu :: binary()) :: non_neg_integer()
   def id(<<_header::16, body::binary>>) do
-    <<_::binary-size(13), rest::binary>> = emulation_prevention_remove(body)
+    <<_vps_id::4, max_sub_layers_minus1::3, _::bits-size(97), rest::binary>> =
+      emulation_prevention_remove(body)
 
-    rest
+    1..max_sub_layers_minus1//1
+    |> Enum.reduce(rest, fn _idx, rest ->
+      <<profile_present?::1, level_present?::1, rest::bitstring>> = rest
+      bytes_to_ignore = profile_present? * 12 + level_present?
+      <<_ignore::binary-size(bytes_to_ignore), rest::bitstring>> = rest
+      rest
+    end)
+    |> ignore_max_sub_layers_bits(max_sub_layers_minus1)
     |> exp_golomb_uint()
     |> elem(0)
   end
@@ -137,10 +131,10 @@ defmodule MediaCodecs.H265.NALU.SPS do
   Gets the stream profile.
   """
   @spec profile(t()) :: profile()
-  def profile(%__MODULE__{profile_idc: 1}), do: :main
-  def profile(%__MODULE__{profile_idc: 2}), do: :main_10
-  def profile(%__MODULE__{profile_idc: 3}), do: :main_still_picture
-  def profile(%__MODULE__{profile_idc: 4}), do: :rext
+  def profile(%__MODULE__{profile_tier_level: %{profile_idc: 1}}), do: :main
+  def profile(%__MODULE__{profile_tier_level: %{profile_idc: 2}}), do: :main_10
+  def profile(%__MODULE__{profile_tier_level: %{profile_idc: 3}}), do: :main_still_picture
+  def profile(%__MODULE__{profile_tier_level: %{profile_idc: 4}}), do: :rext
 
   @doc """
   Builds the MIME type from the SPS.
@@ -148,14 +142,14 @@ defmodule MediaCodecs.H265.NALU.SPS do
   The tag is the first part of the MIME type (e.g. `hvc1`).
   """
   @spec mime_type(t(), String.t()) :: String.t()
-  def mime_type(%__MODULE__{} = sps, tag) do
+  def mime_type(%__MODULE__{profile_tier_level: profile}, tag) do
     tier =
-      case sps.tier_flag do
+      case profile.tier_flag do
         0 -> "L"
         1 -> "H"
       end
 
-    "#{tag}.#{sps.profile_idc}.#{reverse_bits(sps.profile_compatibility_flag, 32)}.#{tier}#{sps.level_idc}.B0"
+    "#{tag}.#{profile.profile_idc}.#{reverse_bits(profile.profile_compatibility_flag, 32)}.#{tier}#{profile.level_idc}.B0"
   end
 
   @doc false
@@ -177,10 +171,19 @@ defmodule MediaCodecs.H265.NALU.SPS do
 
   defp do_parse(
          <<video_parameter_set_id::4, max_sub_layers_minus1::3, temporal_id_nesting_flag::1,
-           profile_space::2, tier_flag::1, profile_idc::5, profile_compatibility_flag::32,
-           progressive_source_flag::1, interlaced_source_flag::1, non_packed_constraint_flag::1,
-           frame_only_constraint_flag::1, _reserved_44bits::44, level_idc::8, rest::binary>>
+           rest::binary>>
        ) do
+    {profile_tier_level, rest} = ProfileTierLevel.parse(rest, true, true)
+
+    rest =
+      1..max_sub_layers_minus1//1
+      |> Enum.reduce(rest, fn _idx, rest ->
+        <<profile_present?::1, level_present?::1, rest::bitstring>> = rest
+        {_, rest} = ProfileTierLevel.parse(rest, profile_present? == 1, level_present? == 1)
+        rest
+      end)
+      |> ignore_max_sub_layers_bits(max_sub_layers_minus1)
+
     {seq_parameter_set_id, rest} = exp_golomb_uint(rest)
     {chroma_format_idc, rest} = exp_golomb_uint(rest)
     {separate_colour_plane_flag, rest} = separate_colour_plane_flag(chroma_format_idc, rest)
@@ -213,15 +216,7 @@ defmodule MediaCodecs.H265.NALU.SPS do
       video_parameter_set_id: video_parameter_set_id,
       max_sub_layers_minus1: max_sub_layers_minus1,
       temporal_id_nesting_flag: temporal_id_nesting_flag,
-      profile_space: profile_space,
-      tier_flag: tier_flag,
-      profile_idc: profile_idc,
-      profile_compatibility_flag: profile_compatibility_flag,
-      progressive_source_flag: progressive_source_flag,
-      interlaced_source_flag: interlaced_source_flag,
-      non_packed_constraint_flag: non_packed_constraint_flag,
-      frame_only_constraint_flag: frame_only_constraint_flag,
-      level_idc: level_idc,
+      profile_tier_level: profile_tier_level,
       seq_parameter_set_id: seq_parameter_set_id,
       chroma_format_idc: chroma_format_idc,
       separate_colour_plane_flag: separate_colour_plane_flag,
@@ -265,5 +260,12 @@ defmodule MediaCodecs.H265.NALU.SPS do
   defp do_reverse_bits(n, width, reversed) do
     next_reversed = Bitwise.bsl(reversed, 1) |> Bitwise.bor(Bitwise.band(n, 1))
     do_reverse_bits(Bitwise.bsr(n, 1), width - 1, next_reversed)
+  end
+
+  defp ignore_max_sub_layers_bits(data, 0), do: data
+
+  defp ignore_max_sub_layers_bits(data, sub_layers) do
+    <<_reserverd::size(8 - sub_layers)-unit(2), rest::bitstring>> = data
+    rest
   end
 end
