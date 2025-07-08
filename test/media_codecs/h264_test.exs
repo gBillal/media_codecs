@@ -26,6 +26,13 @@ defmodule MediaCodecs.H264Test do
     assert H264.NALU.keyframe?(List.last(nalus) |> H264.NALU.parse())
   end
 
+  test "vcl?/1" do
+    nalus = File.read!(@test_fixture) |> H264.nalus()
+
+    refute H264.NALU.vcl?(hd(nalus) |> H264.NALU.parse())
+    assert H264.NALU.vcl?(List.last(nalus) |> H264.NALU.parse())
+  end
+
   test "Pop parameter sets" do
     assert {{[sps], [pps]}, access_unit} = File.read!(@test_fixture) |> H264.pop_parameter_sets()
 

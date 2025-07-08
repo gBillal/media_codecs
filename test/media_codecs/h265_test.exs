@@ -52,4 +52,11 @@ defmodule MediaCodecs.H265Test do
     nalus = for <<size::16, nalu::binary-size(size) <- elementary_stream>>, do: nalu
     assert nalus == expected_nalus
   end
+
+  test "vcl?/1" do
+    nalus = File.read!(@test_fixture) |> H265.nalus()
+
+    refute H265.NALU.vcl?(hd(nalus))
+    assert H265.NALU.vcl?(List.last(nalus))
+  end
 end
