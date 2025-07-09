@@ -29,15 +29,13 @@ defmodule MediaCodecs.H265.NALU.SPS.ProfileTierLevel do
 
   @doc false
   def parse(data, profile_present?, level_present?) do
-    res = %__MODULE__{}
-
-    {res, rest} = parse_profile(profile_present?, data, res)
+    {result, rest} = parse_profile(profile_present?, data, %__MODULE__{})
 
     if level_present? do
       <<level_idc::8, rest::binary>> = rest
-      {%__MODULE__{res | level_idc: level_idc}, rest}
+      {%__MODULE__{result | level_idc: level_idc}, rest}
     else
-      {res, rest}
+      {result, rest}
     end
   end
 

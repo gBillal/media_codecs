@@ -74,11 +74,11 @@ defmodule MediaCodecs.H265.NALU.SPS do
     1..max_sub_layers_minus1//1
     |> Enum.reduce(rest, fn _idx, rest ->
       <<profile_present?::1, level_present?::1, rest::bitstring>> = rest
-      bytes_to_ignore = profile_present? * 12 + level_present?
-      <<_ignore::binary-size(bytes_to_ignore), rest::bitstring>> = rest
+      bytes_to_discard = profile_present? * 11 + level_present?
+      <<_discard::binary-size(bytes_to_discard), rest::bitstring>> = rest
       rest
     end)
-    |> ignore_max_sub_layers_bits(max_sub_layers_minus1)
+    |> ignore_max_sub_layers_reserved_bits(max_sub_layers_minus1)
     |> exp_golomb_uint()
     |> elem(0)
   end
@@ -182,7 +182,7 @@ defmodule MediaCodecs.H265.NALU.SPS do
         {_, rest} = ProfileTierLevel.parse(rest, profile_present? == 1, level_present? == 1)
         rest
       end)
-      |> ignore_max_sub_layers_bits(max_sub_layers_minus1)
+      |> ignore_max_sub_layers_reserved_bits(max_sub_layers_minus1)
 
     {seq_parameter_set_id, rest} = exp_golomb_uint(rest)
     {chroma_format_idc, rest} = exp_golomb_uint(rest)
@@ -262,9 +262,9 @@ defmodule MediaCodecs.H265.NALU.SPS do
     do_reverse_bits(Bitwise.bsr(n, 1), width - 1, next_reversed)
   end
 
-  defp ignore_max_sub_layers_bits(data, 0), do: data
+  defp ignore_max_sub_layers_reserved_bits(data, 0), do: data
 
-  defp ignore_max_sub_layers_bits(data, sub_layers) do
+  defp ignore_max_sub_layers_reserved_bits(data, sub_layers) do
     <<_reserverd::size(8 - sub_layers)-unit(2), rest::bitstring>> = data
     rest
   end
