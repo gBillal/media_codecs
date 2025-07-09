@@ -78,4 +78,46 @@ defmodule MediaCodecs.MPEG4Test do
     assert ESDescriptor.serialize(descriptor) == expected
     assert [^descriptor] = MPEG4.parse_descriptors(expected)
   end
+
+  describe "parse_adts_stream/1" do
+    test "parse adts stream" do
+      stream =
+        <<255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5, 255, 241, 80, 128, 1, 159, 252, 1, 2, 3,
+          4, 5, 255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5, 255, 241, 80, 128, 1, 159, 252, 1>>
+
+      assert {:ok, packets, unprocessed} = MPEG4.parse_adts_stream(stream)
+      assert length(packets) == 3
+      assert <<255, 241, 80, 128, 1, 159, 252, 1>> = unprocessed
+    end
+
+    test "parse invalid stream" do
+      stream =
+        <<255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5, 254, 241, 80, 128, 1, 159, 252, 1, 2, 3,
+          4, 5, 255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5>>
+
+      assert {:error, :invalid_packet} = MPEG4.parse_adts_stream(stream)
+    end
+  end
+
+  describe "parse_adts_stream!/1" do
+    test "parse adts stream" do
+      stream =
+        <<255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5, 255, 241, 80, 128, 1, 159, 252, 1, 2, 3,
+          4, 5, 255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5, 255, 241, 80, 128, 1, 159, 252, 1>>
+
+      assert {packets, unprocessed} = MPEG4.parse_adts_stream!(stream)
+      assert length(packets) == 3
+      assert <<255, 241, 80, 128, 1, 159, 252, 1>> = unprocessed
+    end
+
+    test "parse invalid stream" do
+      stream =
+        <<255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5, 254, 241, 80, 128, 1, 159, 252, 1, 2, 3,
+          4, 5, 255, 241, 80, 128, 1, 159, 252, 1, 2, 3, 4, 5>>
+
+      assert_raise RuntimeError, "Invalid ADTS packet encountered", fn ->
+        MPEG4.parse_adts_stream!(stream)
+      end
+    end
+  end
 end

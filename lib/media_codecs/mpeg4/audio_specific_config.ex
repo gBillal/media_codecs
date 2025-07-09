@@ -3,28 +3,14 @@ defmodule MediaCodecs.MPEG4.AudioSpecificConfig do
   Module defining the Audio Specific Config for MPEG-4 audio codecs.
   """
 
+  import MediaCodecs.MPEG4.Utils
+
   @type t :: %__MODULE__{
           object_type: integer(),
           sampling_frequency: integer(),
           channels: 0..8,
           aot_specific_config: bitstring()
         }
-
-  @sampling_frequency %{
-    0 => 96000,
-    1 => 88200,
-    2 => 64000,
-    3 => 48000,
-    4 => 44100,
-    5 => 32000,
-    6 => 24000,
-    7 => 22050,
-    8 => 16000,
-    9 => 12000,
-    10 => 11025,
-    11 => 8000,
-    12 => 7350
-  }
 
   defstruct [:object_type, :sampling_frequency, :channels, :aot_specific_config]
 
@@ -58,6 +44,6 @@ defmodule MediaCodecs.MPEG4.AudioSpecificConfig do
   end
 
   defp sampling_frequency(<<frequency_index::4, rest::bitstring>>) do
-    {@sampling_frequency[frequency_index], rest}
+    {sampling_frequency_from_index(frequency_index), rest}
   end
 end

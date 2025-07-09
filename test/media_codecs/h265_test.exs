@@ -19,6 +19,11 @@ defmodule MediaCodecs.H265Test do
              File.read!(@test_fixture) |> H265.nalus() |> Enum.map(&H265.NALU.type/1)
   end
 
+  test "Parse nalus" do
+    nalus = File.read!(@test_fixture) |> H265.nalus() |> Enum.map(&H265.NALU.parse/1)
+    assert Enum.map(nalus, & &1.type) == [:vps, :sps, :pps, :prefix_sei, :idr_n_lp]
+  end
+
   test "Pop parameter sets" do
     assert {{[vps], [sps], [pps]}, access_unit} =
              File.read!(@test_fixture) |> H265.pop_parameter_sets()
