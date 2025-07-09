@@ -86,5 +86,48 @@ defmodule MediaCodecs.H265.SPSTest do
 
       assert SPS.id(sps_data) == 0
     end
+
+    test "parses a valid sps with conformance window" do
+      sps_data =
+        <<66, 1, 1, 1, 96, 0, 0, 3, 0, 144, 0, 0, 3, 0, 0, 3, 0, 30, 160, 52, 129, 7, 36, 153,
+          101, 102, 185, 50, 191, 252, 7, 64, 6, 229, 160, 32, 0, 0, 3, 0, 32, 0, 0, 3, 3, 193>>
+
+      sps = SPS.parse(sps_data)
+
+      assert %SPS{
+               video_parameter_set_id: 0,
+               max_sub_layers_minus1: 0,
+               temporal_id_nesting_flag: 1,
+               profile_tier_level: %SPS.ProfileTierLevel{
+                 profile_space: 0,
+                 tier_flag: 0,
+                 profile_idc: 1,
+                 profile_compatibility_flag: 1_610_612_736,
+                 progressive_source_flag: 1,
+                 interlaced_source_flag: 0,
+                 non_packed_constraint_flag: 0,
+                 frame_only_constraint_flag: 1,
+                 level_idc: 30
+               },
+               seq_parameter_set_id: 0,
+               chroma_format_idc: 1,
+               separate_colour_plane_flag: 0,
+               pic_width_in_luma_samples: 104,
+               pic_height_in_luma_samples: 64,
+               conformance_window: [0, 3, 0, 3],
+               bit_depth_luma_minus8: 0,
+               bit_depth_chroma_minus8: 0,
+               log2_max_pic_order_cnt_lsb_minus4: 4,
+               sub_layer_ordering_info_present_flag: 1,
+               max_dec_pic_buffering_minus1: [4],
+               max_num_reorder_pics: [2],
+               max_latency_increase_plus1: [5],
+               log2_min_luma_coding_block_size_minus3: 0,
+               log2_diff_max_min_luma_coding_block_size: 2
+             } = sps
+
+      assert SPS.width(sps) == 98
+      assert SPS.height(sps) == 58
+    end
   end
 end
