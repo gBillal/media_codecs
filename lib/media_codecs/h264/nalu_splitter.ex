@@ -34,8 +34,8 @@ defmodule MediaCodecs.H264.NaluSplitter do
   @doc """
   Processes the given data and splits it into nalus.
   """
-  @spec process(t(), binary()) :: {list(binary()), t()}
-  def process(%__MODULE__{} = splitter, data) do
+  @spec process(binary(), t()) :: {list(binary()), t()}
+  def process(data, %__MODULE__{} = splitter) do
     nalus =
       do_split_data(
         splitter.input_structure,

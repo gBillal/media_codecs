@@ -60,11 +60,10 @@ defmodule MediaCodecs.H265.NALU do
   @doc """
   Gets NALu type.
   """
-  @spec type(nalu :: binary()) :: nalu_type()
-  def type(nalu) do
-    {type, _, _} = header(nalu)
-    nalu_type(type)
-  end
+  @spec type(nalu :: binary(), :atom | :integer) :: nalu_type() | integer()
+  def type(nalu, as \\ :atom)
+  def type(<<_::1, type::6, _rest::bitstring>>, :atom), do: nalu_type(type)
+  def type(<<_::1, type::6, _rest::bitstring>>, :integer), do: type
 
   @doc """
   Parses a NALU bitstring and returns a NALU struct.

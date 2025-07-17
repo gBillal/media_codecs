@@ -19,8 +19,8 @@ defmodule MediaCodecs.H265.NaluSplitter do
   @doc """
   Processes the given data and splits it into nalus.
   """
-  @spec process(NaluSplitter.t(), binary()) :: {list(binary()), NaluSplitter.t()}
-  defdelegate process(splitter, data), to: NaluSplitter
+  @spec process(binary(), NaluSplitter.t()) :: {list(binary()), NaluSplitter.t()}
+  defdelegate process(data, splitter), to: NaluSplitter
 
   @doc """
   Flushes any unprocessed data from the splitter.

@@ -11,7 +11,7 @@ defmodule MediaCodecs.H265.NaluSplitterTest do
       |> File.stream!([], 100)
       |> Stream.transform(
         fn -> NaluSplitter.new() end,
-        &NaluSplitter.process(&2, &1),
+        &NaluSplitter.process/2,
         &{NaluSplitter.flush(&1) |> List.wrap(), &1},
         &Function.identity/1
       )
@@ -31,7 +31,7 @@ defmodule MediaCodecs.H265.NaluSplitterTest do
       |> Enum.map(&:binary.list_to_bin/1)
       |> Stream.transform(
         fn -> NaluSplitter.new({:elementary, 2}) end,
-        &NaluSplitter.process(&2, &1),
+        &NaluSplitter.process/2,
         &{NaluSplitter.flush(&1) |> List.wrap(), &1},
         &Function.identity/1
       )
