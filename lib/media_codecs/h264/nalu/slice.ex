@@ -7,6 +7,8 @@ defmodule MediaCodecs.H264.NALU.Slice do
 
   alias MediaCodecs.H264.NALU.{PPS, SPS}
 
+  @type ps_callback :: (non_neg_integer() -> binary() | nil)
+
   @type t :: %__MODULE__{
           first_mb_in_slice: non_neg_integer(),
           slice_type: non_neg_integer(),
@@ -36,7 +38,8 @@ defmodule MediaCodecs.H264.NALU.Slice do
   @doc """
   Parses a PPS NALU from a binary string.
   """
-  @spec parse(nalu :: binary(), SPS.t() | nil, PPS.t() | nil) :: t()
+  @spec parse(nalu :: binary(), SPS.t() | ps_callback() | nil, PPS.t() | ps_callback() | nil) ::
+          t()
   def parse(<<_::3, type::5, nalu_body::binary>>, sps \\ nil, pps \\ nil) do
     nalu_body
     |> emulation_prevention_remove()
@@ -53,6 +56,9 @@ defmodule MediaCodecs.H264.NALU.Slice do
       slice_type: slice_type,
       pic_parameter_set_id: pic_parameter_set_id
     }
+
+    sps = get_ps(pic_parameter_set_id, sps)
+    pps = get_ps(pic_parameter_set_id, pps)
 
     if is_nil(sps) or is_nil(pps) do
       slice
@@ -117,4 +123,8 @@ defmodule MediaCodecs.H264.NALU.Slice do
       {pic_order_cnt_lsb, 0, data}
     end
   end
+
+  defp get_ps(_pps_id, ps) when is_binary(ps), do: ps
+  defp get_ps(pps_id, ps) when is_function(ps, 1), do: ps.(pps_id)
+  defp get_ps(_pps_id, _ps), do: nil
 end

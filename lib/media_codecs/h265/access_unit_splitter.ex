@@ -4,10 +4,13 @@ defmodule MediaCodecs.H265.AccessUnitSplitter do
   """
 
   require Logger
+
   alias MediaCodecs.H265.NALU
 
+  @type access_unit :: [binary()]
+
   @type t :: %__MODULE__{
-          access_unit: [NALU.t()],
+          access_unit: access_unit(),
           stage: :first | :second,
           previous_nalu_type: integer() | nil
         }
@@ -29,7 +32,7 @@ defmodule MediaCodecs.H265.AccessUnitSplitter do
   If the current NAL unit starts a new access unit, it returns the completed access unit.
   If the NAL unit is part of the current access unit, it returns `nil`.
   """
-  @spec process(nalu :: binary(), t()) :: {access_unit :: [binary()] | nil, t()}
+  @spec process(nalu :: binary(), t()) :: {access_unit() | nil, t()}
   def process(nalu, %{stage: :first} = splitter) do
     nalu_type = NALU.type(nalu, :integer)
     first_slice? = nalu_type < 32 and first_slice?(nalu)
@@ -105,7 +108,7 @@ defmodule MediaCodecs.H265.AccessUnitSplitter do
   @doc """
   Flushes the splitter and return the remaining nalus as an complete access unit
   """
-  @spec flush(t()) :: access_unit :: [binary()]
+  @spec flush(t()) :: access_unit()
   def flush(splitter), do: Enum.reverse(splitter.access_unit)
 
   defp first_slice?(<<_header::16, 1::1, _rest::bitstring>>), do: true

@@ -310,7 +310,7 @@ defmodule MediaCodecs.H264.NALU.SPS do
     }
   end
 
-  defp separate_colour_plane_flag(3, <<separate_colour_plane_flag::1, rest::binary>>) do
+  defp separate_colour_plane_flag(3, <<separate_colour_plane_flag::1, rest::bitstring>>) do
     {separate_colour_plane_flag, rest}
   end
 
