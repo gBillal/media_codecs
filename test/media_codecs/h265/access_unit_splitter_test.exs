@@ -60,17 +60,19 @@ defmodule MediaCodecs.H265.AccessUnitSplitterTest do
   test "ignore invalid nalus" do
     splitter = AccessUnitSplitter.new()
 
-    logs = CaptureLog.capture_log(fn ->
-      assert {nil, splitter} = AccessUnitSplitter.process(<<64, 1, 1>>, splitter)
-      assert {nil, _splitter} = AccessUnitSplitter.process(<<70, 1, 16>>, splitter)
-    end)
+    logs =
+      CaptureLog.capture_log(fn ->
+        assert {nil, splitter} = AccessUnitSplitter.process(<<64, 1, 1>>, splitter)
+        assert {nil, _splitter} = AccessUnitSplitter.process(<<70, 1, 16>>, splitter)
+      end)
 
     assert logs =~ "Invalid transition, ignore nal unit"
 
-    logs = CaptureLog.capture_log(fn ->
-      assert {nil, splitter} = AccessUnitSplitter.process(<<0, 1, 225>>, splitter)
-      assert {nil, _splitter} = AccessUnitSplitter.process(<<30, 1, 79>>, splitter)
-    end)
+    logs =
+      CaptureLog.capture_log(fn ->
+        assert {nil, splitter} = AccessUnitSplitter.process(<<0, 1, 225>>, splitter)
+        assert {nil, _splitter} = AccessUnitSplitter.process(<<30, 1, 79>>, splitter)
+      end)
 
     assert logs =~ "Invalid transition, ignore nal unit"
   end

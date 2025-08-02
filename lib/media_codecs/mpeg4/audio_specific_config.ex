@@ -31,6 +31,18 @@ defmodule MediaCodecs.MPEG4.AudioSpecificConfig do
     }
   end
 
+  @doc """
+  Serializes the Audio Specific Config into a binary format.
+  """
+  @spec serialize(t()) :: binary()
+  def serialize(config) do
+    channels = if config.channels == 8, do: 7, else: config.channels
+
+    <<serialize_object_type(config.object_type)::bitstring,
+      serialize_sampling_frequency(config.sampling_frequency)::bitstring, channels::4,
+      config.aot_specific_config::bitstring>>
+  end
+
   defp object_type(<<31::5, object_type::6, rest::bitstring>>) do
     {object_type + 32, rest}
   end
@@ -45,5 +57,14 @@ defmodule MediaCodecs.MPEG4.AudioSpecificConfig do
 
   defp sampling_frequency(<<frequency_index::4, rest::bitstring>>) do
     {sampling_frequency_from_index(frequency_index), rest}
+  end
+
+  defp serialize_object_type(type) when type >= 32, do: <<31::5, type - 32::6>>
+  defp serialize_object_type(type), do: <<type::5>>
+
+  defp serialize_sampling_frequency(sample_rate) do
+    if index = sampling_frequency_index(sample_rate),
+      do: <<index::4>>,
+      else: <<15::4, sample_rate::24>>
   end
 end

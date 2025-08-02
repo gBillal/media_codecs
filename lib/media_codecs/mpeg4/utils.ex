@@ -38,9 +38,8 @@ defmodule MediaCodecs.MPEG4.Utils do
   @doc """
   Returns the sampling frequency index for a given sampling frequency.
   """
-  @spec sampling_frequency_index(non_neg_integer()) :: non_neg_integer()
-  def sampling_frequency_index(sample_rate),
-    do: Map.fetch!(@reverse_sampling_frequency, sample_rate)
+  @spec sampling_frequency_index(non_neg_integer()) :: non_neg_integer() | nil
+  def sampling_frequency_index(sample_rate), do: @reverse_sampling_frequency[sample_rate]
 
   @doc """
   Returns the sampling frequency for a given index.
