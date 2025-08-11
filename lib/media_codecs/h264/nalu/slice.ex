@@ -124,6 +124,8 @@ defmodule MediaCodecs.H264.NALU.Slice do
     end
   end
 
+  defp pic_order_cnt_lsb(data, _field_pic_flag, _sps, _pps), do: {0, 0, data}
+
   defp get_ps(_pps_id, ps) when is_binary(ps), do: ps
   defp get_ps(pps_id, ps) when is_function(ps, 1), do: ps.(pps_id)
   defp get_ps(_pps_id, _ps), do: nil
