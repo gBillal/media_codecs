@@ -12,7 +12,7 @@ The package can be installed by adding `media_codecs` to your list of dependenci
 ```elixir
 def deps do
   [
-    {:media_codecs, "~> 0.8.1"}
+    {:media_codecs, "~> 0.8.2"}
   ]
 end
 ```
