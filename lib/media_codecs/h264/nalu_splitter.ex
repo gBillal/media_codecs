@@ -43,7 +43,7 @@ defmodule MediaCodecs.H264.NaluSplitter do
         splitter.prefix_pattern
       )
 
-    {unprocessed, nalus} = List.pop_at(nalus, -1)
+    {unprocessed, nalus} = List.pop_at(nalus, -1, <<>>)
 
     unprocessed =
       case splitter.input_structure do
@@ -67,7 +67,10 @@ defmodule MediaCodecs.H264.NaluSplitter do
   def flush(%__MODULE__{}), do: []
 
   defp do_split_data(:annexb, data, pattern) do
-    :binary.split(data, pattern, [:global, :trim_all])
+    case :binary.split(data, pattern, [:global]) do
+      [<<>> | rest] -> rest
+      nalus -> nalus
+    end
   end
 
   defp do_split_data(:elementary, data, pattern) do

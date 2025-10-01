@@ -8,7 +8,7 @@ defmodule MediaCodecs.H264.NaluSplitterTest do
   test "parse annexb stream" do
     nalus =
       @test_fixture
-      |> File.stream!([], 100)
+      |> File.stream!([], 37)
       |> Stream.transform(
         fn -> NaluSplitter.new() end,
         &NaluSplitter.process/2,
