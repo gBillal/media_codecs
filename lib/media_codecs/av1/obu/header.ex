@@ -38,7 +38,7 @@ defmodule MediaCodecs.AV1.OBU.Header do
   Parses an OBU header.
 
       iex> MediaCodecs.AV1.OBU.Header.parse(<<18, 0>>)
-      {%MediaCodecs.AV1.OBU.Header{
+      {:ok, %MediaCodecs.AV1.OBU.Header{
         type: :temporal_delimiter,
         extension_flag: false,
         has_size: true,
@@ -46,7 +46,7 @@ defmodule MediaCodecs.AV1.OBU.Header do
       }, <<0>>}
 
       iex> MediaCodecs.AV1.OBU.Header.parse(<<10, 10, 0, 0, 0, 3, 54, 57>>)
-      {%MediaCodecs.AV1.OBU.Header{
+      {:ok, %MediaCodecs.AV1.OBU.Header{
         type: :sequence_header,
         extension_flag: false,
         has_size: true,
@@ -54,7 +54,7 @@ defmodule MediaCodecs.AV1.OBU.Header do
       }, <<10, 0, 0, 0, 3, 54, 57>>}
 
       iex> MediaCodecs.AV1.OBU.Header.parse(<<31, 200, 0, 0, 0, 3, 54, 57>>)
-      {%MediaCodecs.AV1.OBU.Header{
+      {:ok, %MediaCodecs.AV1.OBU.Header{
         type: :frame_header,
         extension_flag: true,
         has_size: true,
@@ -62,38 +62,33 @@ defmodule MediaCodecs.AV1.OBU.Header do
       }, <<0, 0, 0, 3, 54, 57>>}
 
       iex> MediaCodecs.AV1.OBU.Header.parse(<<31>>)
-      ** (ArgumentError) Data too short to parse AV1 OBU extension header
+      {:error, :invalid_header}
   """
-  @spec parse(binary()) :: {t(), binary()}
-  def parse(
-        <<0::1, type::4, extension_header::1, has_size::1, _reserved::1, rest::binary>> = _data
-      ) do
-    {obu_extension_header, rest} = parse_extension_header(extension_header, rest)
-
-    {%__MODULE__{
-       type: obu_type(type),
-       extension_flag: extension_header == 1,
-       has_size: has_size == 1,
-       extension_header: obu_extension_header
-     }, rest}
+  @spec parse(binary()) :: {:ok, t(), binary()} | {:error, :invalid_header}
+  def parse(<<0::1, type::4, extension_flag::1, has_size::1, _reserved::1, rest::binary>> = _data) do
+    with {:ok, extension_header, rest} <- parse_extension_header(extension_flag, rest) do
+      {:ok,
+       %__MODULE__{
+         type: obu_type(type),
+         extension_flag: extension_flag == 1,
+         has_size: has_size == 1,
+         extension_header: extension_header
+       }, rest}
+    end
   end
 
-  def parse(data) do
-    raise ArgumentError, "Data too short to parse AV1 OBU header: #{byte_size(data)} bytes"
-  end
+  def parse(_data), do: {:error, :invalid_header}
 
   defp parse_extension_header(
          1 = _exists,
          <<temporal_id::3, spatial_id::2, _reserved::3, rest::binary>>
        ) do
-    {%{temporal_id: temporal_id, spatial_id: spatial_id}, rest}
+    {:ok, %{temporal_id: temporal_id, spatial_id: spatial_id}, rest}
   end
 
-  defp parse_extension_header(0, data), do: {nil, data}
+  defp parse_extension_header(0, data), do: {:ok, nil, data}
 
-  defp parse_extension_header(_, _data) do
-    raise ArgumentError, "Data too short to parse AV1 OBU extension header"
-  end
+  defp parse_extension_header(_, _data), do: {:error, :invalid_header}
 
   defp obu_type(1), do: :sequence_header
   defp obu_type(2), do: :temporal_delimiter

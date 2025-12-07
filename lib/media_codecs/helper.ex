@@ -3,7 +3,7 @@ defmodule MediaCodecs.Helper do
 
   import Bitwise
 
-  @compile {:inline, bool_to_int: 1, exp_golomb_uint: 1, exp_golomb_int: 1}
+  @compile {:inline, bool_to_int: 1, exp_golomb_uint: 1, exp_golomb_int: 1, leb128_decode: 1}
 
   @spec exp_golomb_uint(bitstring(), non_neg_integer()) ::
           {non_neg_integer(), bitstring()}
