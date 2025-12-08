@@ -47,6 +47,40 @@ defmodule MediaCodecs.AV1.OBU do
     end
   end
 
+  @doc """
+  Clears the `obu_has_size` flag to 0.
+
+      iex> MediaCodecs.AV1.OBU.clear_size_flag(<<10, 10, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>)
+      <<8, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>
+  """
+  @spec clear_size_flag(binary()) :: binary()
+  def clear_size_flag(<<_::6, 0::1, _::bitstring>> = obu), do: obu
+
+  def clear_size_flag(
+        <<header_start::5, ext_flag::1, _::1, header_end::size(ext_flag * 8 + 1), rest::binary>>
+      ) do
+    {_size, payload} = Helper.leb128_decode(rest)
+    <<header_start::5, ext_flag::1, 0::1, header_end::size(ext_flag * 8 + 1), payload::binary>>
+  end
+
+  @doc """
+  Sets the `obu_has_size` flag to 0.
+
+      iex> MediaCodecs.AV1.OBU.set_size_flag(<<8, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>)
+      <<10, 10, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>
+  """
+  @spec set_size_flag(binary()) :: binary()
+  def set_size_flag(<<_::6, 1::1, _::bitstring>> = obu), do: obu
+
+  def set_size_flag(
+        <<header_start::5, ext_flag::1, _::1, header_end::size(ext_flag * 8 + 1), rest::binary>>
+      ) do
+    leb128_size = Helper.leb128_encode(byte_size(rest))
+
+    <<header_start::5, 0::1, 1::1, header_end::size(ext_flag * 8 + 1), leb128_size::binary,
+      rest::binary>>
+  end
+
   defp obu_payload(false, data), do: data
 
   defp obu_payload(true, data) do
