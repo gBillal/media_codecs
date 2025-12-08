@@ -3,6 +3,8 @@ defmodule MediaCodecs.AV1.OBU.Header do
   Module describing an AV1 OBU (Open Bitstream Unit) header.
   """
 
+  @compile {:inline, type: 1, obu_type: 1}
+
   @type obu_extension_header :: %{
           temporal_id: integer(),
           spatial_id: integer()
@@ -33,6 +35,10 @@ defmodule MediaCodecs.AV1.OBU.Header do
     :has_size,
     :extension_header
   ]
+
+  @doc false
+  @spec type(binary()) :: obu_type()
+  def type(<<0::1, type::4, _::bitstring>>), do: obu_type(type)
 
   @doc """
   Parses an OBU header.

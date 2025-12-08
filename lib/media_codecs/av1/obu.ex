@@ -14,6 +14,15 @@ defmodule MediaCodecs.AV1.OBU do
   defstruct [:header, :payload]
 
   @doc """
+  Returns the OBU type from a binary OBU.
+
+      iex> MediaCodecs.AV1.OBU.type(<<10, 10, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>)
+      :sequence_header
+  """
+  @spec type(binary()) :: Header.obu_type()
+  def type(obu), do: Header.type(obu)
+
+  @doc """
   Parses a binary into an OBU struct.
 
       iex> MediaCodecs.AV1.OBU.parse(<<10, 10, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>)
@@ -48,7 +57,7 @@ defmodule MediaCodecs.AV1.OBU do
   end
 
   @doc """
-  Clears the `obu_has_size` flag to 0.
+  Clears the `obu_has_size` flag.
 
       iex> MediaCodecs.AV1.OBU.clear_size_flag(<<10, 10, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>)
       <<8, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>
@@ -64,7 +73,7 @@ defmodule MediaCodecs.AV1.OBU do
   end
 
   @doc """
-  Sets the `obu_has_size` flag to 0.
+  Sets the `obu_has_size` flag.
 
       iex> MediaCodecs.AV1.OBU.set_size_flag(<<8, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>)
       <<10, 10, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>
