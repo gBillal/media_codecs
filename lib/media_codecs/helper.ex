@@ -3,7 +3,14 @@ defmodule MediaCodecs.Helper do
 
   import Bitwise
 
-  @compile {:inline, bool_to_int: 1, exp_golomb_uint: 1, exp_golomb_int: 1, leb128_decode: 1}
+  @compile {:inline,
+            bool_to_int: 1,
+            exp_golomb_uint: 1,
+            exp_golomb_int: 1,
+            leb128_decode: 1,
+            uvlc: 1,
+            uvlc: 2,
+            next_bit: 1}
 
   @spec exp_golomb_uint(bitstring(), non_neg_integer()) ::
           {non_neg_integer(), bitstring()}
@@ -41,6 +48,18 @@ defmodule MediaCodecs.Helper do
   @spec emulation_prevention_remove(bitstring()) :: bitstring()
   def emulation_prevention_remove(data) do
     :binary.split(data, <<0, 0, 3>>, [:global]) |> Enum.join(<<0, 0>>)
+  end
+
+  @spec uvlc(bitstring(), non_neg_integer()) :: {non_neg_integer(), bitstring()}
+  @spec uvlc(bitstring()) :: {non_neg_integer(), bitstring()}
+  def uvlc(binary, zeros_count \\ 0)
+
+  def uvlc(<<0::1, data::bitstring>>, zeros_count), do: uvlc(data, zeros_count + 1)
+  def uvlc(data, zeros_count) when zeros_count >= 32, do: {(1 <<< 32) - 1, data}
+
+  def uvlc(data, zeros_count) do
+    <<number::size(zeros_count + 1), data::bitstring>> = data
+    {number + (1 <<< zeros_count) - 1, data}
   end
 
   @doc """
@@ -106,8 +125,12 @@ defmodule MediaCodecs.Helper do
     end
   end
 
+  @spec bool_to_int(boolean()) :: 0 | 1
   def bool_to_int(true), do: 1
   def bool_to_int(_other), do: 0
+
+  @spec next_bit(bitstring()) :: {0 | 1, bitstring()}
+  def next_bit(<<bit::1, rest::bitstring>>), do: {bit, rest}
 
   defp do_base128_varint_decode(<<stop_bit::1, length::7, rest::binary>>, acc) do
     acc = acc <<< 7 ||| length

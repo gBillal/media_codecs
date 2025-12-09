@@ -3,12 +3,12 @@ defmodule MediaCodecs.AV1.OBU do
   Module describing an AV1 OBU (Open Bitstream Unit).
   """
 
-  alias __MODULE__.Header
+  alias __MODULE__.{Header, SequenceHeader}
   alias MediaCodecs.Helper
 
   @type t :: %__MODULE__{
           header: Header.t(),
-          payload: binary() | struct()
+          payload: binary() | SequenceHeader.t()
         }
 
   defstruct [:header, :payload]
@@ -41,7 +41,7 @@ defmodule MediaCodecs.AV1.OBU do
   def parse(data) do
     with {:ok, header, rest} <- Header.parse(data),
          {:ok, obu_payload} <- obu_payload(header.has_size, rest) do
-      {:ok, %__MODULE__{header: header, payload: obu_payload}}
+      {:ok, %__MODULE__{header: header, payload: parse_payload(header.type, obu_payload)}}
     end
   end
 
@@ -99,4 +99,7 @@ defmodule MediaCodecs.AV1.OBU do
       do: {:ok, payload},
       else: {:error, :invalid_payload}
   end
+
+  defp parse_payload(:sequence_header, payload), do: SequenceHeader.parse(payload)
+  defp parse_payload(_other, payload), do: payload
 end
