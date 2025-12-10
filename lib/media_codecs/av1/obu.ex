@@ -25,16 +25,16 @@ defmodule MediaCodecs.AV1.OBU do
   @doc """
   Parses a binary into an OBU struct.
 
-      iex> MediaCodecs.AV1.OBU.parse(<<10, 10, 0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>)
+      iex> MediaCodecs.AV1.OBU.parse(<<18, 0>>)
       {:ok,
        %MediaCodecs.AV1.OBU{
          header: %MediaCodecs.AV1.OBU.Header{
-           type: :sequence_header,
+           type: :temporal_delimiter,
            extension_flag: false,
            has_size: true,
            extension_header: nil
          },
-         payload: <<0, 0, 0, 3, 54, 57, 231, 255, 204, 66>>
+         payload: <<>>
        }}
   """
   @spec parse(binary()) :: {:ok, t()} | {:error, atom()}
@@ -90,7 +90,34 @@ defmodule MediaCodecs.AV1.OBU do
       rest::binary>>
   end
 
-  defp obu_payload(false, data), do: data
+  @doc """
+  Checks if an OBU is a keyframe.
+
+      iex> MediaCodecs.AV1.OBU.keyframe?(<<18, 0>>)
+      false
+
+      iex> MediaCodecs.AV1.OBU.keyframe?(<<10, 11, 0, 0, 0, 66, 167, 191, 230, 46, 223, 200, 66>>)
+      false
+
+      iex> MediaCodecs.AV1.OBU.keyframe?(<<50, 218, 169, 3, 20, 0, 52, 162, 224, 0, 0, 136, 0>>)
+      true
+  """
+  @spec keyframe?(binary()) :: boolean()
+  def keyframe?(
+        <<0::1, type::4, extension::1, has_size::1, _::size(extension * 8 + 1), rest::binary>>
+      )
+      when type == 3 or type == 6 do
+    rest = if has_size == 1, do: elem(Helper.leb128_decode(rest), 1), else: rest
+
+    case rest do
+      <<0::1, 0::2, 1::1, _::bitstring>> -> true
+      _other -> false
+    end
+  end
+
+  def keyframe?(_other), do: false
+
+  defp obu_payload(false, data), do: {:ok, data}
 
   defp obu_payload(true, data) do
     {size, payload} = Helper.leb128_decode(data)
