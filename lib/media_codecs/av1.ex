@@ -6,7 +6,7 @@ defmodule MediaCodecs.AV1 do
   alias MediaCodecs.Helper
 
   @doc """
-  Split a binary stream into a list of OBUs.
+  Splits a binary into a list of OBUs.
   """
   @spec obus(binary()) :: {:ok, [binary()]} | {:error, atom()}
   def obus(stream), do: do_obus(stream, [])

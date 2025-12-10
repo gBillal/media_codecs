@@ -46,7 +46,7 @@ defmodule MediaCodecs.AV1.OBU do
   end
 
   @doc """
-  Same as `parse/1`, but raises an error if parsing fails.
+  Same as `parse/1`, but raises in case of failure.
   """
   @spec parse!(binary()) :: t()
   def parse!(data) do
@@ -104,10 +104,10 @@ defmodule MediaCodecs.AV1.OBU do
   """
   @spec keyframe?(binary()) :: boolean()
   def keyframe?(<<0::1, type::4, _::bitstring>>) when type != 3 and type != 6, do: false
-  def keyframe?(<<0::1, _::4, 0::1, 0::2, 0::3, 1::1, _::bitstring>>), do: true
-  def keyframe?(<<0::1, _::4, 1::1, 0::10, 0::3, 1::1, _::bitstring>>), do: true
+  def keyframe?(<<0::1, _::4, 0::1, 0::1, 0::1, 0::3, 1::1, _::bitstring>>), do: true
+  def keyframe?(<<0::1, _::4, 1::1, 0::1, 0::9, 0::3, 1::1, _::bitstring>>), do: true
 
-  def keyframe?(<<0::1, _::4, extension::1, _::size(extension * 8 + 2), rest::binary>>) do
+  def keyframe?(<<0::1, _::4, extension::1, 1::1, _::size(extension * 8 + 1), rest::binary>>) do
     {_size, rest} = Helper.leb128_decode(rest)
     match?(<<0::3, 1::1, _::bitstring>>, rest)
   end
