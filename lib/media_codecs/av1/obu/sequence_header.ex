@@ -37,7 +37,8 @@ defmodule MediaCodecs.AV1.OBU.SequenceHeader do
           bitdepth: non_neg_integer(),
           monochrome: boolean(),
           subsampling_x: 0..1,
-          subsampling_y: 0..1
+          subsampling_y: 0..1,
+          chroma_sample_position: non_neg_integer()
         }
 
   @type t :: %__MODULE__{
@@ -125,25 +126,6 @@ defmodule MediaCodecs.AV1.OBU.SequenceHeader do
           use_128x128_superblock::1, enable_filter_intra::1, enable_intra_edge_filter::1,
           rest::bitstring>> = rest
 
-        rest =
-          if reduced_still_picture_header == 1 do
-            rest
-          else
-            <<_::4, enable_order_hint::1, _::size(enable_order_hint * 2),
-              seq_choose_screen_content_tools::1, rest::bitstring>> = rest
-
-            {seq_force_screen_content_tools, rest} =
-              if seq_choose_screen_content_tools == 1, do: {1, rest}, else: next_bit(rest)
-
-            <<seq_choose_integer_mv::size(seq_force_screen_content_tools),
-              _::size(1 - seq_choose_integer_mv), _::size(enable_order_hint * 3 + 3),
-              rest::bitstring>> = rest
-
-            rest
-          end
-
-        {color_config, rest} = parse_color_config(rest, seq_profile)
-
         sequence_header = %{
           sequence_header
           | initial_display_delay_present_flag: initial_display_delay_present_flag == 1,
@@ -157,14 +139,32 @@ defmodule MediaCodecs.AV1.OBU.SequenceHeader do
             additional_frame_id_length_minus_1: additional_frame_id_length_minus_1,
             use_128x128_superblock: use_128x128_superblock == 1,
             enable_filter_intra: enable_filter_intra == 1,
-            enable_intra_edge_filter: enable_intra_edge_filter == 1,
-            color_config: color_config
+            enable_intra_edge_filter: enable_intra_edge_filter == 1
         }
 
         {sequence_header, rest}
       end
 
-    sequence_header
+    rest =
+      if reduced_still_picture_header == 1 do
+        <<_::3, rest::bitstring>> = rest
+        rest
+      else
+        <<_::4, enable_order_hint::1, _::size(enable_order_hint * 2),
+          seq_choose_screen_content_tools::1, rest::bitstring>> = rest
+
+        {seq_force_screen_content_tools, rest} =
+          if seq_choose_screen_content_tools == 1, do: {1, rest}, else: next_bit(rest)
+
+        <<seq_choose_integer_mv::size(seq_force_screen_content_tools),
+          _::size(1 - seq_choose_integer_mv), _::size(enable_order_hint * 3 + 3),
+          rest::bitstring>> = rest
+
+        rest
+      end
+
+    {color_config, _rest} = parse_color_config(rest, seq_profile)
+    %{sequence_header | color_config: color_config}
   end
 
   @spec width(t()) :: non_neg_integer()
@@ -298,31 +298,39 @@ defmodule MediaCodecs.AV1.OBU.SequenceHeader do
       transfer_characteristics::size(color_description_present_flag * 8),
       matrix_coefficients::size(color_description_present_flag * 8), rest::bitstring>> = rest
 
-    {{subsampling_x, subsampling_y}, rest} =
+    {{subsampling_x, subsampling_y, chroma_sample_position}, rest} =
       cond do
         monochrome == 1 ->
           {_color_range, rest} = next_bit(rest)
-          {{1, 1}, rest}
+          {{1, 1, 0}, rest}
 
         color_primaries == 1 and transfer_characteristics == 13 and matrix_coefficients == 0 ->
-          {{0, 0}, rest}
+          {{0, 0, 0}, rest}
 
         true ->
           {_color_range, rest} = next_bit(rest)
 
-          cond do
-            seq_profile == 0 ->
-              {{1, 1}, rest}
+          {{subsampling_x, subsampling_y}, rest} =
+            cond do
+              seq_profile == 0 ->
+                {{1, 1}, rest}
 
-            seq_profile == 1 ->
-              {{0, 0}, rest}
+              seq_profile == 1 ->
+                {{0, 0}, rest}
 
-            bitdepth == 12 ->
-              <<subsampling_x::1, subsampling_y::size(subsampling_x), rest::bitstring>> = rest
-              {{subsampling_x, subsampling_y}, rest}
+              bitdepth == 12 ->
+                <<subsampling_x::1, subsampling_y::size(subsampling_x), rest::bitstring>> = rest
+                {{subsampling_x, subsampling_y}, rest}
 
-            true ->
-              {{1, 0}, rest}
+              true ->
+                {{1, 0}, rest}
+            end
+
+          if subsampling_x == 1 and subsampling_y == 1 do
+            <<chroma_sample_position::2, rest::bitstring>> = rest
+            {{subsampling_x, subsampling_y, chroma_sample_position}, rest}
+          else
+            {{subsampling_x, subsampling_y, 0}, rest}
           end
       end
 
@@ -331,7 +339,8 @@ defmodule MediaCodecs.AV1.OBU.SequenceHeader do
       bitdepth: bitdepth,
       monochrome: monochrome == 1,
       subsampling_x: subsampling_x,
-      subsampling_y: subsampling_y
+      subsampling_y: subsampling_y,
+      chroma_sample_position: chroma_sample_position
     }
 
     {color_config, rest}

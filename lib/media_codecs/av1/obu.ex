@@ -103,16 +103,13 @@ defmodule MediaCodecs.AV1.OBU do
       true
   """
   @spec keyframe?(binary()) :: boolean()
-  def keyframe?(
-        <<0::1, type::4, extension::1, has_size::1, _::size(extension * 8 + 1), rest::binary>>
-      )
-      when type == 3 or type == 6 do
-    rest = if has_size == 1, do: elem(Helper.leb128_decode(rest), 1), else: rest
+  def keyframe?(<<0::1, type::4, _::bitstring>>) when type != 3 and type != 6, do: false
+  def keyframe?(<<0::1, _::4, 0::1, 0::2, 0::3, 1::1, _::bitstring>>), do: true
+  def keyframe?(<<0::1, _::4, 1::1, 0::10, 0::3, 1::1, _::bitstring>>), do: true
 
-    case rest do
-      <<0::1, 0::2, 1::1, _::bitstring>> -> true
-      _other -> false
-    end
+  def keyframe?(<<0::1, _::4, extension::1, _::size(extension * 8 + 2), rest::binary>>) do
+    {_size, rest} = Helper.leb128_decode(rest)
+    match?(<<0::3, 1::1, _::bitstring>>, rest)
   end
 
   def keyframe?(_other), do: false
