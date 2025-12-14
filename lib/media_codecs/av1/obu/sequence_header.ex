@@ -167,11 +167,31 @@ defmodule MediaCodecs.AV1.OBU.SequenceHeader do
     %{sequence_header | color_config: color_config}
   end
 
+  @doc """
+  Gets frame width from sequence header.
+  """
   @spec width(t()) :: non_neg_integer()
   def width(%__MODULE__{max_frame_width_minus_1: w}), do: w + 1
 
+  @doc """
+  Gets frame height from sequence header.
+  """
   @spec height(t()) :: non_neg_integer()
   def height(%__MODULE__{max_frame_height_minus_1: h}), do: h + 1
+
+  @doc """
+  Gets mime type to use in `Codecs` field in HLS and Dash.
+  """
+  @spec mime_type(t()) :: String.t()
+  def mime_type(%__MODULE__{seq_profile: profile} = sh) do
+    %{seq_level_idx: level, seq_tier: tier} = sh.operating_points[0]
+
+    level = String.pad_leading(Integer.to_string(level), 2, "0")
+    tier = if tier == 0, do: "M", else: "H"
+    bitdepth = String.pad_leading(Integer.to_string(sh.color_config[:bitdepth]), 2, "0")
+
+    "av01.#{profile}.#{level}#{tier}.#{bitdepth}"
+  end
 
   defp parse_reduced_still_picture_header(sh, <<seq_level_idx::5, rest::bitstring>>) do
     operating_point = %{

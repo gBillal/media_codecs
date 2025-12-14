@@ -44,5 +44,6 @@ defmodule MediaCodecs.AV1.SequenceHeaderTest do
 
     assert SequenceHeader.width(sequence_header) == 1920
     assert SequenceHeader.height(sequence_header) == 818
+    assert SequenceHeader.mime_type(sequence_header) == "av01.0.08M.08"
   end
 end
