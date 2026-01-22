@@ -4,10 +4,33 @@ defmodule MediaCodecs.H265 do
   """
 
   alias MediaCodecs.H265.NALU
+  alias MediaCodecs.H265.NaluSplitter
+  alias MediaCodecs.H265.AccessUnitSplitter
 
   @doc """
   Convert an access unit to a list of NALUs.
   """
+
+  @spec parse(binary()) :: [AccessUnitSplitter.t()]
+  def parse(access_units) do
+    nalu_splinter = NaluSplitter.new(:annexb)
+    access_unit_splitter = AccessUnitSplitter.new()
+
+    {nalus, _splinter} =
+      NaluSplitter.process(access_units, nalu_splinter)
+
+    Enum.map(nalus, fn nalu ->
+      AccessUnitSplitter.process(nalu, access_unit_splitter)
+      |> case do
+        {nil, splitter} ->
+          splitter
+
+        {access_unit, splitter} ->
+          {access_unit, splitter}
+      end
+    end)
+  end
+
   @spec nalus(access_unit :: binary()) :: [binary()]
   def nalus(access_unit) do
     :binary.split(access_unit, [<<1::32>>, <<1::24>>], [:global, :trim_all])
