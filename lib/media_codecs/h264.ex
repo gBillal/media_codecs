@@ -2,8 +2,9 @@ defmodule MediaCodecs.H264 do
   @moduledoc """
   Utilities for working with H.264 (AVC) video codec.
   """
-
   alias MediaCodecs.H264.NALU
+  alias MediaCodecs.H264.NaluSplitter
+  alias MediaCodecs.H264.AccessUnitSplitter
 
   @type profile ::
           :high_cavlc_4_4_4_intra
@@ -24,6 +25,22 @@ defmodule MediaCodecs.H264 do
   @doc """
   Convert an access unit to a list of NALUs.
   """
+
+  @spec parse(binary()) :: [AccessUnitSplitter.t()]
+  def parse(access_units) do
+    nalu_splinter = NaluSplitter.new(:annexb)
+    access_unit_splitter = AccessUnitSplitter.new()
+
+    {nalus, _splinter} =
+      NaluSplitter.process(access_units, nalu_splinter)
+
+    Enum.map(nalus, fn nalu ->
+      {_au, parser} = AccessUnitSplitter.process(nalu, access_unit_splitter)
+      parser.access_unit
+    end)
+    |> List.flatten()
+  end
+
   @spec nalus(binary()) :: [binary()]
   def nalus(access_unit) do
     :binary.split(access_unit, [<<1::32>>, <<1::24>>], [:global, :trim_all])
@@ -35,7 +52,10 @@ defmodule MediaCodecs.H264 do
   @spec pop_parameter_sets(access_unit :: binary() | [binary()]) ::
           {{sps :: [binary()], pps :: [binary()]}, access_unit :: [binary()]}
   def pop_parameter_sets(access_unit) do
-    nalus = if is_binary(access_unit), do: nalus(access_unit), else: access_unit
+    nalus =
+      if is_binary(access_unit),
+        do: nalus(access_unit),
+        else: access_unit
 
     {{sps, pps}, au} =
       Enum.reduce(nalus, {{[], []}, []}, fn nalu, {{sps, pps}, au} ->
