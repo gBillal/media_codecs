@@ -35,15 +35,11 @@ defmodule MediaCodecs.H264 do
       NaluSplitter.process(access_units, nalu_splinter)
 
     Enum.map(nalus, fn nalu ->
-      AccessUnitSplitter.process(nalu, access_unit_splitter)
-      |> case do
-        {nil, splitter} ->
-          splitter
-
-        {access_unit, splitter} ->
-          {access_unit, splitter}
-      end
+      {_au, parser} = AccessUnitSplitter.process(nalu, access_unit_splitter)
+      parser.access_unit
     end)
+    |> Enum.filter(&(&1 != []))
+    |> List.flatten()
   end
 
   @spec nalus(binary()) :: [binary()]
